@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shaw Travel Map</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+    }
+
+    h1 {
+      padding: 1rem 0;
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .map-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      height: 0;
+      overflow: hidden;
+    }
+
+    .map-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Shaw Travel Map</h1>
+  <div class="map-container">
+    <iframe
+      src="https://www.google.com/maps/d/u/0/embed?mid=18pNYr9-E-Lj_v3lpQg5m6ol1xGqe_i0&ehbc=2E312F&noprof=1"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>
+  </div>
+</body>
+</html>
