@@ -7,41 +7,57 @@
   <style>
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #f9f9f9;
-      color: #333;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #1c1c1e;
       text-align: center;
     }
 
+    header {
+      padding: 2rem 1rem 1rem;
+    }
+
+    .logo {
+      font-size: 3rem;
+      color: #007aff; /* iOS-style blue */
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+
     h1 {
-      padding: 1rem 0;
-      margin: 0;
       font-size: 2rem;
+      font-weight: 600;
+      margin: 0;
     }
 
     .map-container {
       width: 100%;
-      height: 100vh; /* full height of screen */
-      max-height: 100vh;
+      height: 100vh;
+      max-height: calc(100vh - 120px); /* leave room for header */
       position: relative;
     }
 
-    .map-container iframe {
+    iframe {
       width: 100%;
       height: 100%;
-      border: 0;
+      border: none;
     }
 
-    /* Optional: reduce title size on mobile */
     @media (max-width: 600px) {
       h1 {
         font-size: 1.5rem;
+      }
+      .logo {
+        font-size: 2.5rem;
       }
     }
   </style>
 </head>
 <body>
-  <h1>Shaw Travel Map</h1>
+  <header>
+    <div class="logo">📍</div>
+    <h1>Shaw Travel Map</h1>
+  </header>
   <div class="map-container">
     <iframe
       src="https://www.google.com/maps/d/u/0/embed?mid=18pNYr9-E-Lj_v3lpQg5m6ol1xGqe_i0&ehbc=2E312F&noprof=1"
