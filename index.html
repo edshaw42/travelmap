@@ -43,6 +43,7 @@
       width: 100%;
       height: calc(100vh - 90px);
       position: relative;
+      cursor: crosshair; /* Add crosshair cursor for the map */
     }
 
     .map-overlay {
@@ -84,13 +85,14 @@
 
       if (data.values) {
         const rows = data.values.slice(1); // Skip header row
-        rows.forEach(([year, lat, lng, name, description]) => {
+        rows.forEach(([year, lat, lng, name, description, month]) => {
           addPinToMap({
             year,
             lat: parseFloat(lat),
             lng: parseFloat(lng),
             name,
             description,
+            month,
           });
         });
       }
@@ -145,35 +147,91 @@
       });
     }
 
-    function addPinToMap({ year, lat, lng, name, description }) {
+    function addPinToMap({ year, lat, lng, name, description, month }) {
       const color = getColorByYear(year);
 
       // Create a DOM element for the marker content
       const markerContent = document.createElement("div");
       markerContent.style.backgroundColor = color;
-      markerContent.style.width = "12px";
-      markerContent.style.height = "12px";
+      markerContent.style.width = "16px";
+      markerContent.style.height = "16px";
       markerContent.style.borderRadius = "50%";
+      markerContent.style.border = "2px solid white";
+      markerContent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
 
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng },
         map,
         title: name,
-        content: markerContent, // Pass the DOM element instead of a string
+        content: markerContent,
       });
 
       marker.addEventListener("gmp-click", () => {
-        alert(`Name: ${name}\nDescription: ${description}\nYear: ${year}`);
+        // Create info window content
+        const contentDiv = document.createElement("div");
+        contentDiv.style.padding = "15px";
+        contentDiv.style.maxWidth = "300px";
+        contentDiv.innerHTML = `
+          <h3 style="margin-top: 0;">${name}</h3>
+          <p><strong>Year:</strong> ${year}</p>
+          <p><strong>Month:</strong> ${month || "N/A"}</p>
+          <p><strong>Description:</strong> ${description}</p>
+          <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+        `;
+
+        // If we already have an active info window, close it
+        if (window.activeInfoWindow) {
+          window.activeInfoWindow.close();
+        }
+
+        // Create a new info window
+        const infoWindow = new google.maps.InfoWindow({
+          content: contentDiv,
+        });
+
+        infoWindow.open({
+          map,
+          anchor: marker,
+        });
+
+        // Store reference to open info window
+        window.activeInfoWindow = infoWindow;
       });
     }
 
     function getColorByYear(year) {
-      const colors = {
-        2023: "#FF0000",
-        2024: "#00FF00",
-        2025: "#0000FF",
-      };
-      return colors[year] || "#000000";
+      // Generate colors based on year (using a consistent algorithm)
+      const yearNum = parseInt(year);
+      const baseYear = 2018;
+      const colorOptions = [
+        "#FF5252", // Red
+        "#FF9800", // Orange
+        "#FFEB3B", // Yellow
+        "#4CAF50", // Green
+        "#2196F3", // Blue
+        "#673AB7", // Purple
+        "#E91E63", // Pink
+        "#795548"  // Brown
+      ];
+      
+      const index = (yearNum - baseYear) % colorOptions.length;
+      return colorOptions[index];
+    }
+
+    function populateYearDropdown() {
+      const yearSelect = document.getElementById("year");
+      yearSelect.innerHTML = ""; // Clear existing options
+      
+      const currentYear = new Date().getFullYear();
+      for (let year = 2018; year <= currentYear; year++) {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      }
+      
+      // Set current year as default
+      yearSelect.value = currentYear;
     }
 
     async function handleFormSubmit(event) {
@@ -186,7 +244,7 @@
       const lat = parseFloat(document.getElementById("latitude").value);
       const lng = parseFloat(document.getElementById("longitude").value);
 
-      const pin = { year, lat, lng, name, description };
+      const pin = { year, lat, lng, name, description, month };
 
       addPinToMap(pin);
       await addPinToSheet(pin);
@@ -235,7 +293,10 @@
     }
 
     window.initMap = initMap;
-    window.onload = fetchPins;
+    window.onload = () => {
+      fetchPins();
+      populateYearDropdown();
+    };
   </script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ&callback=initMap&libraries=marker"></script>
 </head>
@@ -270,9 +331,6 @@
       <label>
         Year:
         <select id="year" required style="width: 100%; padding: 0.5rem; font-size: 1rem;">
-          <option value="2023">2023</option>
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
         </select>
       </label>
       <label>
