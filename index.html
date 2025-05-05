@@ -68,24 +68,26 @@
     }
   </style>
   <script>
-    async function geocodeLocation(location) {
-      try {
-        const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ`;
-        console.log("Geocoding API URL:", apiUrl); // Log the exact API URL
+    let map;
 
-        const response = await fetch(apiUrl);
-        const data = await response.json();
+    function initMap() {
+      map = new google.maps.Map(document.querySelector(".map-container"), {
+        center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
+        zoom: 4,
+      });
 
-        if (data.status === "OK") {
-          return data.results[0].geometry.location;
-        } else {
-          console.error("Geocoding API response:", data);
-          throw new Error(`Location not found: ${location}`);
-        }
-      } catch (error) {
-        console.error("Error during geocoding:", error);
-        throw new Error("An error occurred while fetching location data. Please try again.");
-      }
+      // Add a click listener to the map
+      map.addListener("click", (event) => {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+
+        // Pre-fill the form with the clicked coordinates
+        document.getElementById("latitude").value = lat;
+        document.getElementById("longitude").value = lng;
+
+        // Show the form
+        document.getElementById("location-form-container").style.display = "block";
+      });
     }
 
     async function handleFormSubmit(event) {
@@ -95,23 +97,21 @@
       const name = document.getElementById("name").value;
       const month = document.getElementById("month").value;
       const description = document.getElementById("description").value;
-      const location = document.getElementById("location").value;
       const year = document.getElementById("year").value;
+      const lat = document.getElementById("latitude").value;
+      const lng = document.getElementById("longitude").value;
 
-      try {
-        // Geocode the location to get latitude and longitude
-        const { lat, lng } = await geocodeLocation(location);
+      // Generate a URL to add the pin to your custom map
+      alert(`Pin added successfully:\nName: ${name}\nMonth: ${month}\nDescription: ${description}\nCoordinates: (${lat}, ${lng})\nYear: ${year}`);
 
-        // Generate a URL to add the pin to your custom map
-        alert(`Pin added successfully:\nName: ${name}\nMonth: ${month}\nDescription: ${description}\nLocation: ${location}\nCoordinates: (${lat}, ${lng})\nYear: ${year}`);
-
-        // Reset the form
-        event.target.reset();
-      } catch (error) {
-        alert("Error: " + error.message);
-      }
+      // Reset the form and hide it
+      event.target.reset();
+      document.getElementById("location-form-container").style.display = "none";
     }
+
+    window.initMap = initMap;
   </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ&callback=initMap"></script>
 </head>
 <body>
   <header>
@@ -124,15 +124,9 @@
     <h1>Explored by the Shaws</h1>
   </header>
 
-  <div class="map-container">
-    <iframe
-      src="https://www.google.com/maps/d/u/0/embed?mid=18pNYr9-E-Lj_v3lpQg5m6ol1xGqe_i0&ehbc=2E312F&noprof=1"
-      allowfullscreen
-      loading="lazy"
-    ></iframe>
-  </div>
+  <div class="map-container"></div>
 
-  <div style="padding: 2rem;">
+  <div id="location-form-container" style="display: none; padding: 2rem;">
     <h2>Add a New Location</h2>
     <form onsubmit="handleFormSubmit(event)" style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <label>
@@ -148,10 +142,6 @@
         <textarea id="description" required style="width: 100%; padding: 0.5rem; font-size: 1rem;"></textarea>
       </label>
       <label>
-        Location (City/State or Address):
-        <input type="text" id="location" required style="width: 100%; padding: 0.5rem; font-size: 1rem;" />
-      </label>
-      <label>
         Year:
         <select id="year" required style="width: 100%; padding: 0.5rem; font-size: 1rem;">
           <option value="2023">2023</option>
@@ -159,6 +149,8 @@
           <option value="2025">2025</option>
         </select>
       </label>
+      <input type="hidden" id="latitude" />
+      <input type="hidden" id="longitude" />
       <button type="submit" style="padding: 0.75rem; font-size: 1rem; background-color: #007aff; color: white; border: none; cursor: pointer;">Add Location</button>
     </form>
   </div>
