@@ -70,9 +70,10 @@
   <script>
     async function geocodeLocation(location) {
       try {
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ`
-        );
+        const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ`;
+        console.log("Geocoding API URL:", apiUrl); // Log the exact API URL
+
+        const response = await fetch(apiUrl);
         const data = await response.json();
 
         if (data.status === "OK") {
