@@ -176,6 +176,7 @@
       markerContent.style.borderRadius = "50%";
       markerContent.style.border = "2px solid white";
       markerContent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
+      markerContent.style.cursor = "pointer"; // Important: Change cursor for pins
 
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng },
@@ -184,7 +185,11 @@
         content: markerContent,
       });
 
-      marker.addEventListener("gmp-click", () => {
+      // Add the click event listener to the marker directly
+      marker.addEventListener("gmp-click", (event) => {
+        // Stop the click event from propagating to the map
+        event.stopPropagation();
+        
         // Create info window content
         const contentDiv = document.createElement("div");
         contentDiv.style.padding = "15px";
