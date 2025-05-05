@@ -161,27 +161,19 @@
     }
 
     function initMap() {
-      // Embed your custom map
-      const iframe = document.createElement("iframe");
-      iframe.src = "https://www.google.com/maps/d/u/0/embed?mid=18pNYr9-E-Lj_v3lpQg5m6ol1xGqe_i0&ehbc=2E312F&noprof=1";
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.border = "none";
-      document.querySelector(".map-container").appendChild(iframe);
+      // Create a new map instance
+      map = new google.maps.Map(document.querySelector(".map-container"), {
+        center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
+        zoom: 4,
+      });
 
-      // Add a transparent overlay to capture clicks
-      const overlay = document.createElement("div");
-      overlay.className = "map-overlay";
-      document.querySelector(".map-container").appendChild(overlay);
+      // Fetch and display existing pins from Google Sheets
+      fetchPins();
 
-      overlay.addEventListener("click", (event) => {
-        const bounds = overlay.getBoundingClientRect();
-        const x = event.clientX - bounds.left;
-        const y = event.clientY - bounds.top;
-
-        // Approximate lat/lng based on click position (placeholder logic)
-        const lat = 39.8283 + (y / bounds.height - 0.5) * 10; // Adjust scale as needed
-        const lng = -98.5795 + (x / bounds.width - 0.5) * 20; // Adjust scale as needed
+      // Add a click listener to the map
+      map.addListener("click", (event) => {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
 
         // Pre-fill the form with the clicked coordinates
         document.getElementById("latitude").value = lat.toFixed(6);
