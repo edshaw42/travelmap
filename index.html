@@ -71,22 +71,34 @@
     let map;
 
     function initMap() {
-      map = new google.maps.Map(document.querySelector(".map-container"), {
-        center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
-        zoom: 4,
-      });
+      // Embed your custom map
+      const iframe = document.createElement("iframe");
+      iframe.src = "https://www.google.com/maps/d/u/0/embed?mid=18pNYr9-E-Lj_v3lpQg5m6ol1xGqe_i0&ehbc=2E312F&noprof=1";
+      iframe.style.width = "100%";
+      iframe.style.height = "100%";
+      iframe.style.border = "none";
+      document.querySelector(".map-container").appendChild(iframe);
 
-      // Add a click listener to the map
-      map.addListener("click", (event) => {
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
+      // Add a click listener to the map container
+      document.querySelector(".map-container").addEventListener("click", (event) => {
+        const lat = 39.8283; // Placeholder latitude
+        const lng = -98.5795; // Placeholder longitude
 
         // Pre-fill the form with the clicked coordinates
         document.getElementById("latitude").value = lat;
         document.getElementById("longitude").value = lng;
 
-        // Show the form
-        document.getElementById("location-form-container").style.display = "block";
+        // Show the form as a modal
+        const formContainer = document.getElementById("location-form-container");
+        formContainer.style.display = "block";
+        formContainer.style.position = "fixed";
+        formContainer.style.top = "50%";
+        formContainer.style.left = "50%";
+        formContainer.style.transform = "translate(-50%, -50%)";
+        formContainer.style.backgroundColor = "white";
+        formContainer.style.padding = "2rem";
+        formContainer.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+        formContainer.style.zIndex = "1000";
       });
     }
 
@@ -101,8 +113,10 @@
       const lat = document.getElementById("latitude").value;
       const lng = document.getElementById("longitude").value;
 
-      // Generate a URL to add the pin to your custom map
+      // Display the pin details
       alert(`Pin added successfully:\nName: ${name}\nMonth: ${month}\nDescription: ${description}\nCoordinates: (${lat}, ${lng})\nYear: ${year}`);
+
+      // TODO: Add logic to sync this pin with your custom map
 
       // Reset the form and hide it
       event.target.reset();
@@ -124,9 +138,9 @@
     <h1>Explored by the Shaws</h1>
   </header>
 
-  <div class="map-container"></div>
+  <div class="map-container" style="position: relative; height: calc(100vh - 90px);"></div>
 
-  <div id="location-form-container" style="display: none; padding: 2rem;">
+  <div id="location-form-container" style="display: none;">
     <h2>Add a New Location</h2>
     <form onsubmit="handleFormSubmit(event)" style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <label>
@@ -149,8 +163,14 @@
           <option value="2025">2025</option>
         </select>
       </label>
-      <input type="hidden" id="latitude" />
-      <input type="hidden" id="longitude" />
+      <label>
+        Latitude:
+        <input type="text" id="latitude" readonly style="width: 100%; padding: 0.5rem; font-size: 1rem; background-color: #f0f0f0;" />
+      </label>
+      <label>
+        Longitude:
+        <input type="text" id="longitude" readonly style="width: 100%; padding: 0.5rem; font-size: 1rem; background-color: #f0f0f0;" />
+      </label>
       <button type="submit" style="padding: 0.75rem; font-size: 1rem; background-color: #007aff; color: white; border: none; cursor: pointer;">Add Location</button>
     </form>
   </div>
