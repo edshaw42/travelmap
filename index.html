@@ -128,7 +128,7 @@
         content: markerContent, // Pass the DOM element instead of a string
       });
 
-      marker.addListener("click", () => {
+      marker.addEventListener("gmp-click", () => {
         alert(`Name: ${name}\nDescription: ${description}\nYear: ${year}`);
       });
     }
@@ -167,10 +167,11 @@
       const mapContainer = document.querySelector(".map-container");
       mapContainer.innerHTML = "";
 
-      // Initialize the map
+      // Initialize the map with a valid Map ID
       map = new google.maps.Map(mapContainer, {
         center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
         zoom: 4,
+        mapId: "YOUR_MAP_ID", // Replace with your valid Map ID
       });
 
       // Fetch and display existing pins from Google Sheets
