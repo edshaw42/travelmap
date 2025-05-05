@@ -113,17 +113,16 @@
 
     function addPinToMap({ year, lat, lng, name, description }) {
       const color = getColorByYear(year);
-      new google.maps.Marker({
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng },
         map,
         title: name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeWeight: 1,
-        },
+        content: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%;"></div>`
+      });
+
+      marker.addListener("click", () => {
+        alert(`Name: ${name}\nDescription: ${description}\nYear: ${year}`);
       });
     }
 
