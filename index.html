@@ -114,11 +114,18 @@
     function addPinToMap({ year, lat, lng, name, description }) {
       const color = getColorByYear(year);
 
+      // Create a DOM element for the marker content
+      const markerContent = document.createElement("div");
+      markerContent.style.backgroundColor = color;
+      markerContent.style.width = "12px";
+      markerContent.style.height = "12px";
+      markerContent.style.borderRadius = "50%";
+
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng },
         map,
         title: name,
-        content: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%;"></div>`
+        content: markerContent, // Pass the DOM element instead of a string
       });
 
       marker.addListener("click", () => {
