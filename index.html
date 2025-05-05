@@ -97,19 +97,18 @@
     }
 
     async function addPinToSheet(pin) {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+      const url = "https://script.google.com/macros/s/AKfycbygr0vLsHSpjBNElBlZYOVW-tqAN16u6p-JNqSV_tArwtFYg26_0bRTIgRY0Ki37KUs/exec"; // Updated with your Google Apps Script web app URL
+
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          values: [[pin.year, pin.lat, pin.lng, pin.name, pin.description]],
-        }),
+        body: JSON.stringify(pin),
       });
 
       const result = await response.json();
-      console.log("Google Sheets API Response:", result);
+      console.log("Google Apps Script Response:", result);
 
-      if (!response.ok) {
+      if (result.status !== "success") {
         alert("Failed to save pin to Google Sheets.");
       }
     }
