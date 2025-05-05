@@ -106,6 +106,9 @@
         }),
       });
 
+      const result = await response.json();
+      console.log("Google Sheets API Response:", result);
+
       if (!response.ok) {
         alert("Failed to save pin to Google Sheets.");
       }
