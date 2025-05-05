@@ -100,6 +100,9 @@
       const url = "https://script.google.com/macros/s/AKfycbygr0vLsHSpjBNElBlZYOVW-tqAN16u6p-JNqSV_tArwtFYg26_0bRTIgRY0Ki37KUs/exec"; // Updated with your Google Apps Script web app URL
 
       try {
+        console.log("Sending request to:", url);
+        console.log("Payload:", JSON.stringify(pin));
+
         const response = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
