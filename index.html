@@ -97,7 +97,8 @@
     }
 
     async function addPinToSheet(pin) {
-      const url = "https://script.google.com/macros/s/AKfycbzW37f28Lsh1BXBcqpkZ4HFA9z6I4OEhhku8TfXwG9LErxRKAynQLryeR0UJo4LKP6A/exec"; // Updated with the latest Google Apps Script web app URL
+      // Add a cache-busting parameter to the URL
+      const url = "https://script.google.com/macros/s/AKfycbzW37f28Lsh1BXBcqpkZ4HFA9z6I4OEhhku8TfXwG9LErxRKAynQLryeR0UJo4LKP6A/exec?_=" + new Date().getTime();
 
       try {
         console.log("Sending request to:", url);
