@@ -80,21 +80,39 @@
 
     async function fetchPins() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
 
-      if (data.values) {
-        const rows = data.values.slice(1); // Skip header row
-        rows.forEach(([year, lat, lng, name, description, month]) => {
-          addPinToMap({
-            year,
-            lat: parseFloat(lat),
-            lng: parseFloat(lng),
-            name,
-            description,
-            month,
+        if (data.values && data.values.length > 0) {
+          // Skip header row if present
+          const rows = data.values.length > 1 ? data.values.slice(1) : data.values;
+          
+          rows.forEach(row => {
+            if (row.length >= 5) {
+              const year = row[0];
+              const lat = parseFloat(row[1]);
+              const lng = parseFloat(row[2]);
+              const name = row[3];
+              const description = row[4];
+              const month = row.length > 5 ? row[5] : ""; // In case month is not in older data
+              
+              if (!isNaN(lat) && !isNaN(lng)) {
+                addPinToMap({
+                  year,
+                  lat,
+                  lng,
+                  name,
+                  description,
+                  month
+                });
+              }
+            }
           });
-        });
+        }
+      } catch (error) {
+        console.error("Error fetching pins:", error);
       }
     }
 
@@ -234,6 +252,27 @@
       yearSelect.value = currentYear;
     }
 
+    function populateMonthDropdown() {
+      const monthSelect = document.getElementById("month");
+      monthSelect.innerHTML = ""; // Clear existing options
+      
+      const months = [
+        "January", "February", "March", "April", "May", "June", 
+        "July", "August", "September", "October", "November", "December"
+      ];
+      
+      months.forEach((month, index) => {
+        const option = document.createElement("option");
+        option.value = month;
+        option.textContent = month;
+        monthSelect.appendChild(option);
+      });
+      
+      // Set current month as default
+      const currentMonth = new Date().getMonth();
+      monthSelect.selectedIndex = currentMonth;
+    }
+
     async function handleFormSubmit(event) {
       event.preventDefault();
 
@@ -251,6 +290,10 @@
 
       alert("Pin added successfully!");
       event.target.reset();
+      document.getElementById("location-form-container").style.display = "none";
+    }
+
+    function closeForm() {
       document.getElementById("location-form-container").style.display = "none";
     }
 
@@ -296,6 +339,7 @@
     window.onload = () => {
       fetchPins();
       populateYearDropdown();
+      populateMonthDropdown();
     };
   </script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ&callback=initMap&libraries=marker"></script>
@@ -322,7 +366,8 @@
       </label>
       <label>
         Month:
-        <input type="text" id="month" required style="width: 100%; padding: 0.5rem; font-size: 1rem;" />
+        <select id="month" required style="width: 100%; padding: 0.5rem; font-size: 1rem;">
+        </select>
       </label>
       <label>
         Description:
@@ -341,7 +386,10 @@
         Longitude:
         <input type="text" id="longitude" readonly style="width: 100%; padding: 0.5rem; font-size: 1rem; background-color: #f0f0f0;" />
       </label>
-      <button type="submit" style="padding: 0.75rem; font-size: 1rem; background-color: #007aff; color: white; border: none; cursor: pointer;">Add Location</button>
+      <div style="display: flex; gap: 1rem;">
+        <button type="submit" style="padding: 0.75rem; font-size: 1rem; background-color: #007aff; color: white; border: none; cursor: pointer;">Add Location</button>
+        <button type="button" onclick="closeForm()" style="padding: 0.75rem; font-size: 1rem; background-color: #f44336; color: white; border: none; cursor: pointer;">Cancel</button>
+      </div>
     </form>
   </div>
 </body>
