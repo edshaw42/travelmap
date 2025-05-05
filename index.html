@@ -117,6 +117,8 @@
         }
       } catch (error) {
         console.error("Error in addPinToSheet:", error);
+        console.log("Request URL:", url);
+        console.log("Request Payload:", JSON.stringify(pin));
         alert("An error occurred while saving the pin. Please try again.");
       }
     }
