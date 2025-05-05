@@ -45,12 +45,6 @@
       position: relative;
     }
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
     .map-overlay {
       position: absolute;
       top: 0;
@@ -161,8 +155,11 @@
     }
 
     function initMap() {
-      // Create a new map instance
-      map = new google.maps.Map(document.querySelector(".map-container"), {
+      // Ensure the dynamically generated map is displayed
+      const mapContainer = document.querySelector(".map-container");
+      mapContainer.innerHTML = ""; // Clear any existing content in the map container
+
+      map = new google.maps.Map(mapContainer, {
         center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
         zoom: 4,
       });
