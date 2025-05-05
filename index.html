@@ -75,6 +75,8 @@
     const SHEET_ID = "1wvENHweG4e16n514x2zUR-NJmhp3IrUPxTQUFaGRgg0"; // Google Sheet ID
     const API_KEY = "AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ"; // Your provided API key
 
+    let map; // Ensure map is globally accessible
+
     async function fetchPins() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
       const response = await fetch(url);
@@ -155,10 +157,11 @@
     }
 
     function initMap() {
-      // Ensure the dynamically generated map is displayed
+      // Clear any existing content in the map container
       const mapContainer = document.querySelector(".map-container");
-      mapContainer.innerHTML = ""; // Clear any existing content in the map container
+      mapContainer.innerHTML = "";
 
+      // Initialize the map
       map = new google.maps.Map(mapContainer, {
         center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
         zoom: 4,
