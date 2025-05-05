@@ -99,17 +99,22 @@
     async function addPinToSheet(pin) {
       const url = "https://script.google.com/macros/s/AKfycbygr0vLsHSpjBNElBlZYOVW-tqAN16u6p-JNqSV_tArwtFYg26_0bRTIgRY0Ki37KUs/exec"; // Updated with your Google Apps Script web app URL
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pin),
-      });
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pin),
+        });
 
-      const result = await response.json();
-      console.log("Google Apps Script Response:", result);
+        const result = await response.json();
+        console.log("Google Apps Script Response:", result);
 
-      if (result.status !== "success") {
-        alert("Failed to save pin to Google Sheets.");
+        if (result.status !== "success") {
+          alert("Failed to save pin to Google Sheets.");
+        }
+      } catch (error) {
+        console.error("Error in addPinToSheet:", error);
+        alert("An error occurred while saving the pin. Please try again.");
       }
     }
 
