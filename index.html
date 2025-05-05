@@ -51,6 +51,16 @@
       border: none;
     }
 
+    .map-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      cursor: crosshair;
+    }
+
     @media (max-width: 600px) {
       header {
         padding: 1rem;
@@ -68,7 +78,87 @@
     }
   </style>
   <script>
-    let map;
+    const SHEET_ID = "1wvENHweG4e16n514x2zUR-NJmhp3IrUPxTQUFaGRgg0"; // Google Sheet ID
+    const API_KEY = "AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ"; // Your provided API key
+
+    async function fetchPins() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.values) {
+        const rows = data.values.slice(1); // Skip header row
+        rows.forEach(([year, lat, lng, name, description]) => {
+          addPinToMap({
+            year,
+            lat: parseFloat(lat),
+            lng: parseFloat(lng),
+            name,
+            description,
+          });
+        });
+      }
+    }
+
+    async function addPinToSheet(pin) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          values: [[pin.year, pin.lat, pin.lng, pin.name, pin.description]],
+        }),
+      });
+
+      if (!response.ok) {
+        alert("Failed to save pin to Google Sheets.");
+      }
+    }
+
+    function addPinToMap({ year, lat, lng, name, description }) {
+      const color = getColorByYear(year);
+      new google.maps.Marker({
+        position: { lat, lng },
+        map,
+        title: name,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeWeight: 1,
+        },
+      });
+    }
+
+    function getColorByYear(year) {
+      const colors = {
+        2023: "#FF0000",
+        2024: "#00FF00",
+        2025: "#0000FF",
+      };
+      return colors[year] || "#000000";
+    }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const month = document.getElementById("month").value;
+      const description = document.getElementById("description").value;
+      const year = document.getElementById("year").value;
+      const lat = parseFloat(document.getElementById("latitude").value);
+      const lng = parseFloat(document.getElementById("longitude").value);
+
+      const pin = { year, lat, lng, name, description };
+
+      addPinToMap(pin);
+      await addPinToSheet(pin);
+
+      alert("Pin added successfully!");
+      event.target.reset();
+      document.getElementById("location-form-container").style.display = "none";
+    }
 
     function initMap() {
       // Embed your custom map
@@ -79,14 +169,23 @@
       iframe.style.border = "none";
       document.querySelector(".map-container").appendChild(iframe);
 
-      // Add a click listener to the map container
-      document.querySelector(".map-container").addEventListener("click", (event) => {
-        const lat = 39.8283; // Placeholder latitude
-        const lng = -98.5795; // Placeholder longitude
+      // Add a transparent overlay to capture clicks
+      const overlay = document.createElement("div");
+      overlay.className = "map-overlay";
+      document.querySelector(".map-container").appendChild(overlay);
+
+      overlay.addEventListener("click", (event) => {
+        const bounds = overlay.getBoundingClientRect();
+        const x = event.clientX - bounds.left;
+        const y = event.clientY - bounds.top;
+
+        // Approximate lat/lng based on click position (placeholder logic)
+        const lat = 39.8283 + (y / bounds.height - 0.5) * 10; // Adjust scale as needed
+        const lng = -98.5795 + (x / bounds.width - 0.5) * 20; // Adjust scale as needed
 
         // Pre-fill the form with the clicked coordinates
-        document.getElementById("latitude").value = lat;
-        document.getElementById("longitude").value = lng;
+        document.getElementById("latitude").value = lat.toFixed(6);
+        document.getElementById("longitude").value = lng.toFixed(6);
 
         // Show the form as a modal
         const formContainer = document.getElementById("location-form-container");
@@ -102,28 +201,8 @@
       });
     }
 
-    async function handleFormSubmit(event) {
-      event.preventDefault();
-
-      // Get form values
-      const name = document.getElementById("name").value;
-      const month = document.getElementById("month").value;
-      const description = document.getElementById("description").value;
-      const year = document.getElementById("year").value;
-      const lat = document.getElementById("latitude").value;
-      const lng = document.getElementById("longitude").value;
-
-      // Display the pin details
-      alert(`Pin added successfully:\nName: ${name}\nMonth: ${month}\nDescription: ${description}\nCoordinates: (${lat}, ${lng})\nYear: ${year}`);
-
-      // TODO: Add logic to sync this pin with your custom map
-
-      // Reset the form and hide it
-      event.target.reset();
-      document.getElementById("location-form-container").style.display = "none";
-    }
-
     window.initMap = initMap;
+    window.onload = fetchPins;
   </script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ&callback=initMap"></script>
 </head>
