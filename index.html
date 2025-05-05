@@ -69,14 +69,21 @@
   </style>
   <script>
     async function geocodeLocation(location) {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ`
-      );
-      const data = await response.json();
-      if (data.status === "OK") {
-        return data.results[0].geometry.location;
-      } else {
-        throw new Error(`Location not found: ${location}`);
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=AIzaSyD4onh-91wzzcsGdBkJxVJ-U6FYnFo3ebQ`
+        );
+        const data = await response.json();
+
+        if (data.status === "OK") {
+          return data.results[0].geometry.location;
+        } else {
+          console.error("Geocoding API response:", data);
+          throw new Error(`Location not found: ${location}`);
+        }
+      } catch (error) {
+        console.error("Error during geocoding:", error);
+        throw new Error("An error occurred while fetching location data. Please try again.");
       }
     }
 
