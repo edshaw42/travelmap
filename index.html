@@ -721,9 +721,10 @@
         // Debug rows for troubleshooting
         console.log("Total rows for stats:", rows.length);
         
-        // Process pins without geocoding API (which has rate limits)
-        // Instead, use a simplified approach based on latitude/longitude ranges
+        // Process each pin
         rows.forEach(row => {
+          if (row.length < 3) return; // Skip invalid rows
+          
           // Count by year
           const year = row[0];
           yearCounts[year] = (yearCounts[year] || 0) + 1;
@@ -731,10 +732,12 @@
           // Count by month (if available)
           if (row.length > 5) {
             const month = row[5];
-            monthCounts[month] = (monthCounts[month] || 0) + 1;
+            if (month) {
+              monthCounts[month] = (monthCounts[month] || 0) + 1;
+            }
           }
           
-          // Approximate unique locations
+          // Process location data
           if (row[1] && row[2]) {
             const lat = parseFloat(row[1]);
             const lng = parseFloat(row[2]);
@@ -745,106 +748,84 @@
               const gridLng = lng.toFixed(1);
               locations.add(`${gridLat},${gridLng}`);
               
-              // Simple country/state detection based on coordinates
+              console.log(`Processing pin at ${lat}, ${lng}`);
+              
               // USA boundaries (approximate)
               if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
+                console.log("Adding USA");
                 countries.add("United States");
                 
                 // Northeast
                 if (lat >= 37.0 && lat <= 47.5 && lng >= -80.0 && lng <= -66.0) {
+                  console.log("  Adding Northeast Region");
                   states.add("Northeast Region");
-                  if (lng >= -73.5 && lat >= 41.0) states.add("New England");
-                  if (lng <= -73.5 && lat >= 39.5) states.add("Mid-Atlantic");
                 }
                 
                 // Southeast
                 if (lat >= 25.0 && lat <= 39.0 && lng >= -90.0 && lng <= -75.0) {
+                  console.log("  Adding Southeast Region");
                   states.add("Southeast Region");
-                  // Major Southeast states
-                  if (lat <= 31.0 && lng >= -87.5) states.add("Florida");
-                  if (lat >= 32.0 && lat <= 35.0) states.add("The Carolinas");
-                  if (lat >= 36.5 && lat <= 39.0) states.add("Virginia");
                 }
                 
                 // Midwest
                 if (lat >= 37.0 && lat <= 49.5 && lng >= -97.0 && lng <= -80.5) {
+                  console.log("  Adding Midwest Region");
                   states.add("Midwest Region");
-                  if (lat >= 41.0 && lng >= -84.0) states.add("Great Lakes");
-                  if (lat <= 41.0 && lng <= -84.0) states.add("Ohio Valley");
                 }
                 
                 // South Central
                 if (lat >= 25.0 && lat <= 37.0 && lng >= -106.5 && lng <= -88.5) {
+                  console.log("  Adding South Central Region");
                   states.add("South Central Region");
-                  if (lat <= 33.0 && lng <= -90.0) states.add("Gulf Coast");
-                  if (lat >= 30.0 && lng <= -93.5) states.add("Texas");
                 }
                 
                 // Mountain West
                 if (lat >= 31.0 && lat <= 49.0 && lng >= -120.0 && lng <= -104.0) {
+                  console.log("  Adding Mountain West Region");
                   states.add("Mountain West Region");
-                  if (lat <= 37.0) states.add("Southwest");
-                  if (lat >= 41.0) states.add("Northern Rockies");
                 }
                 
                 // West Coast
                 if (lat >= 32.0 && lat <= 49.0 && lng >= -125.0 && lng <= -114.0) {
+                  console.log("  Adding West Coast Region");
                   states.add("West Coast Region");
-                  if (lat <= 42.0) states.add("California");
-                  if (lat >= 42.0 && lat <= 46.5) states.add("Pacific Northwest");
                 }
                 
                 // Alaska
                 if (lat >= 51.0 && lat <= 71.5 && lng >= -180.0 && lng <= -130.0) {
+                  console.log("  Adding Alaska");
                   states.add("Alaska");
                 }
                 
                 // Hawaii
                 if (lat >= 18.0 && lat <= 23.0 && lng >= -160.0 && lng <= -154.0) {
+                  console.log("  Adding Hawaii");
                   states.add("Hawaii");
                 }
               }
               
-              // Other countries
               // Canada
               if (lat >= 48.0 && lat <= 83.0 && lng >= -141.0 && lng <= -52.0) {
+                console.log("Adding Canada");
                 countries.add("Canada");
               }
               
               // Mexico
               if (lat >= 14.0 && lat <= 33.0 && lng >= -118.0 && lng <= -86.0) {
+                console.log("Adding Mexico");
                 countries.add("Mexico");
               }
               
               // Europe (very rough approximation)
               if (lat >= 36.0 && lat <= 70.0 && lng >= -10.0 && lng <= 40.0) {
+                console.log("Adding Europe");
                 countries.add("Europe");
-                
-                // Western Europe
-                if (lat >= 43.0 && lat <= 55.0 && lng >= -5.0 && lng <= 15.0) {
-                  if (lat >= 48.0) countries.add("United Kingdom");
-                  if (lat <= 48.0 && lat >= 43.0) countries.add("France");
-                  if (lat >= 47.0 && lat <= 55.0 && lng >= 5.0) countries.add("Germany");
-                }
-                
-                // Southern Europe
-                if (lat <= 45.0 && lat >= 36.0 && lng >= 5.0 && lng <= 20.0) {
-                  countries.add("Mediterranean");
-                  if (lat >= 36.0 && lat <= 44.0 && lng <= 3.5) countries.add("Spain");
-                  if (lat >= 42.5 && lat <= 47.0 && lng >= 6.5) countries.add("Italy");
-                }
               }
               
               // Asia
               if (lat >= 0.0 && lat <= 55.0 && lng >= 60.0 && lng <= 145.0) {
+                console.log("Adding Asia");
                 countries.add("Asia");
-                // East Asia
-                if (lat >= 30.0 && lat <= 46.0 && lng >= 128.0 && lng <= 146.0) {
-                  countries.add("Japan");
-                }
-                if (lat >= 18.0 && lat <= 53.0 && lng >= 73.0 && lng <= 135.0) {
-                  countries.add("China");
-                }
               }
             }
           }
@@ -852,6 +833,8 @@
         
         console.log("Countries detected:", Array.from(countries));
         console.log("States detected:", Array.from(states));
+        console.log("Number of countries:", countries.size);
+        console.log("Number of states:", states.size);
         
         // Build the stats HTML
         let statsHTML = `
@@ -873,7 +856,7 @@
           </div>
           
           <div class="stat-card">
-            <div class="stat-title">States/Provinces Visited</div>
+            <div class="stat-title">US Regions Visited</div>
             <div class="stat-value">${states.size}</div>
             <div class="stat-subtitle">${Array.from(states).sort().join(', ')}</div>
           </div>
@@ -898,29 +881,34 @@
         statsHTML += `
             </div>
           </div>
-          
-          <div class="stat-card">
-            <div class="stat-title">Most Visited Months</div>
-            <div style="margin-top: 12px;">
         `;
         
-        // Sort months by count (most to least)
-        const sortedMonths = Object.keys(monthCounts).sort((a, b) => monthCounts[b] - monthCounts[a]);
-        
-        // Show top 5 months
-        sortedMonths.slice(0, 5).forEach(month => {
+        // Only show months section if we have month data
+        if (Object.keys(monthCounts).length > 0) {
           statsHTML += `
-            <div class="year-stat">
-              <span>${month}</span>
-              <span class="year-count">${monthCounts[month]} trips</span>
+            <div class="stat-card">
+              <div class="stat-title">Most Visited Months</div>
+              <div style="margin-top: 12px;">
+          `;
+          
+          // Sort months by count (most to least)
+          const sortedMonths = Object.keys(monthCounts).sort((a, b) => monthCounts[b] - monthCounts[a]);
+          
+          // Show top 5 months
+          sortedMonths.slice(0, 5).forEach(month => {
+            statsHTML += `
+              <div class="year-stat">
+                <span>${month}</span>
+                <span class="year-count">${monthCounts[month]} trips</span>
+              </div>
+            `;
+          });
+          
+          statsHTML += `
+              </div>
             </div>
           `;
-        });
-        
-        statsHTML += `
-            </div>
-          </div>
-        `;
+        }
         
         statsContent.innerHTML = statsHTML;
         
