@@ -187,10 +187,16 @@
         zIndex: 100, // Ensure pins are above other map elements
       });
       
-      // Prevent the map click event when clicking on a marker
-      google.maps.event.addDomListener(markerContent, 'click', function(e) {
+      // Store pin data with marker to ensure it's available on click
+      marker.pinData = { year, lat, lng, name, description, month };
+      
+      // Add direct click handler
+      markerContent.addEventListener('click', function(e) {
         e.stopPropagation();
         e.preventDefault();
+        
+        // Log to debug
+        console.log("Pin clicked:", marker.pinData);
         
         // Create info window content
         const contentDiv = document.createElement("div");
