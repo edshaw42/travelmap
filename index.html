@@ -118,6 +118,9 @@
 
     async function addPinToSheet(pin) {
       return new Promise((resolve, reject) => {
+        // Log the pin data for debugging
+        console.log("Attempting to save pin data:", pin);
+        
         // Create an invisible iframe to handle the form submission without page navigation
         const iframe = document.createElement('iframe');
         iframe.name = 'hidden-iframe';
@@ -127,6 +130,7 @@
         // Create a form that will submit to the Google Apps Script
         const form = document.createElement('form');
         form.method = 'POST';
+        // Use the latest deployment URL - verify this is correct
         form.action = 'https://script.google.com/macros/s/AKfycbzW37f28Lsh1BXBcqpkZ4HFA9z6I4OEhhku8TfXwG9LErxRKAynQLryeR0UJo4LKP6A/exec';
         form.target = 'hidden-iframe';
         
@@ -137,9 +141,10 @@
           input.name = key;
           input.value = pin[key];
           form.appendChild(input);
+          console.log(`Added field ${key} with value ${pin[key]}`);
         }
         
-        // Add the form to the document and submit it
+        // Add the form to the document
         document.body.appendChild(form);
         
         console.log("Submitting form to Google Apps Script");
@@ -147,20 +152,37 @@
         // Handle the iframe load event
         iframe.onload = function() {
           console.log("Form submitted successfully");
+          
+          // Try to get the response content for debugging
+          try {
+            const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
+            const responseText = iframeContent.body.innerText;
+            console.log("Response from Google Apps Script:", responseText);
+            
+            // Check if there's an error indication in the response
+            if (responseText.includes("Error")) {
+              console.error("Error detected in response:", responseText);
+              alert("There was an issue saving the data. Check the console for details.");
+            }
+          } catch(e) {
+            console.log("Could not read iframe response:", e);
+          }
+          
           // Clean up
           document.body.removeChild(form);
           document.body.removeChild(iframe);
           resolve(true);
         };
         
-        iframe.onerror = function() {
-          console.error("Error submitting form");
+        iframe.onerror = function(error) {
+          console.error("Error submitting form:", error);
           // Clean up
           document.body.removeChild(form);
           document.body.removeChild(iframe);
           reject(new Error("Failed to submit form"));
         };
         
+        // Submit the form
         form.submit();
       });
     }
