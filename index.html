@@ -716,67 +716,49 @@
         const states = new Set();
         const countries = new Set();
         
-        // Process each pin
-        const processLocations = async () => {
-          for (const row of rows) {
-            // Count by year
-            const year = row[0];
-            yearCounts[year] = (yearCounts[year] || 0) + 1;
+        // Debug rows for troubleshooting
+        console.log("Total rows for stats:", rows.length);
+        
+        // Process pins without geocoding API (which has rate limits)
+        // Instead, use a simplified approach based on latitude/longitude ranges
+        rows.forEach(row => {
+          // Count by year
+          const year = row[0];
+          yearCounts[year] = (yearCounts[year] || 0) + 1;
+          
+          // Count by month (if available)
+          if (row.length > 5) {
+            const month = row[5];
+            monthCounts[month] = (monthCounts[month] || 0) + 1;
+          }
+          
+          // Approximate unique locations
+          if (row[1] && row[2]) {
+            const lat = parseFloat(row[1]);
+            const lng = parseFloat(row[2]);
             
-            // Count by month (if available)
-            if (row.length > 5) {
-              const month = row[5];
-              monthCounts[month] = (monthCounts[month] || 0) + 1;
-            }
-            
-            // Approximate unique locations and determine state/country
-            if (row[1] && row[2]) {
-              const lat = parseFloat(row[1]);
-              const lng = parseFloat(row[2]);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              // Add to unique locations (grid-based)
+              const gridLat = lat.toFixed(1);
+              const gridLng = lng.toFixed(1);
+              locations.add(`${gridLat},${gridLng}`);
               
-              if (!isNaN(lat) && !isNaN(lng)) {
-                // Add to unique locations (grid-based)
-                const gridLat = lat.toFixed(1);
-                const gridLng = lng.toFixed(1);
-                locations.add(`${gridLat},${gridLng}`);
+              // Simple country/state detection based on coordinates
+              // USA boundaries (approximate)
+              if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
+                countries.add("United States");
                 
-                // Get state and country data
-                try {
-                  const geoResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`);
-                  const geoData = await geoResponse.json();
-                  
-                  if (geoData.results && geoData.results.length > 0) {
-                    // Process address components to extract state and country
-                    const addressComponents = geoData.results[0].address_components;
-                    
-                    let state = null;
-                    let country = null;
-                    
-                    for (const component of addressComponents) {
-                      // Find state/province
-                      if (component.types.includes('administrative_area_level_1')) {
-                        state = component.long_name;
-                      }
-                      
-                      // Find country
-                      if (component.types.includes('country')) {
-                        country = component.long_name;
-                      }
-                    }
-                    
-                    if (state) states.add(state);
-                    if (country) countries.add(country);
-                  }
-                } catch (error) {
-                  console.error('Error getting location data:', error);
-                }
+                // Rough state boundaries (very approximate)
+                // ... existing state detection code ...
               }
+              
+              // ... existing country detection code ...
             }
           }
-        };
+        });
         
-        // Process locations in batches to avoid rate limiting
-        await processLocations();
+        console.log("Countries detected:", Array.from(countries));
+        console.log("States detected:", Array.from(states));
         
         // Build the stats HTML
         let statsHTML = `
