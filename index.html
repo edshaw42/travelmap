@@ -663,13 +663,11 @@
         if (isAddPinMode) {
           addPinButton.classList.add('active');
           addPinIndicator.classList.add('visible');
-          document.querySelector('.map-container').style.cursor = 'crosshair';
-          console.log('Cursor set to crosshair', document.querySelector('.map-container').style.cursor);
+          mapContainer.style.cursor = 'crosshair';
         } else {
           addPinButton.classList.remove('active');
           addPinIndicator.classList.remove('visible');
-          document.querySelector('.map-container').style.cursor = 'default';
-          console.log('Cursor set to default', document.querySelector('.map-container').style.cursor);
+          mapContainer.style.cursor = 'default';
         }
       });
       
@@ -708,96 +706,88 @@
         // Skip header row if present
         const rows = data.values.length > 1 ? data.values.slice(1) : data.values;
         
-        // For tracking unique states and countries
-        const states = new Set();
-        const countries = new Set();
+        // Calculate stats
+        const totalTrips = rows.length;
+        const yearCounts = {};
+        const monthCounts = {};
         
-        // Process each pin
+        // For unique locations approximation (using lat/lng grid)
+        const locations = new Set();
+        
         rows.forEach(row => {
-          if (row.length < 3) return; // Skip invalid rows
+          // Count by year
+          const year = row[0];
+          yearCounts[year] = (yearCounts[year] || 0) + 1;
           
-          // Process location data
+          // Count by month (if available)
+          if (row.length > 5) {
+            const month = row[5];
+            monthCounts[month] = (monthCounts[month] || 0) + 1;
+          }
+          
+          // Approximate unique locations by rounding coordinates to 1 decimal place
+          // This creates roughly 11km x 11km grid cells
           if (row[1] && row[2]) {
-            const lat = parseFloat(row[1]);
-            const lng = parseFloat(row[2]);
-            
-            if (!isNaN(lat) && !isNaN(lng)) {
-              // Get pin name and description for text analysis
-              const pinName = row[3] || '';
-              const pinDesc = row[4] || '';
-              const pinText = (pinName + ' ' + pinDesc).toLowerCase();
-              
-              // USA boundaries (approximate)
-              if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
-                countries.add("United States");
-                
-                // Check for specific USA states in the pin text
-                const usStates = {
-                  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-                  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
-                  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
-                  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-                  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
-                  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-                  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
-                  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-                  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
-                  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY'
-                };
-                
-                // Check for state names in the pin text
-                for (const [stateName, stateCode] of Object.entries(usStates)) {
-                  if (pinText.includes(stateName) || pinText.includes(`, ${stateCode}`) || 
-                      pinText.includes(` ${stateCode},`) || pinText.includes(` ${stateCode} `)) {
-                    states.add(stateCode);
-                    break;
-                  }
-                }
-              }
-              
-              // Check for specific countries in the pin name or description
-              // Common countries to check
-              const countries_to_check = [
-                'canada', 'mexico', 'france', 'united kingdom', 'uk', 'england', 
-                'italy', 'spain', 'germany', 'japan', 'china', 'australia'
-              ];
-              
-              countries_to_check.forEach(country => {
-                if (pinText.includes(country)) {
-                  // Convert to proper case for display
-                  const properCountry = country === 'uk' ? 'United Kingdom' : 
-                                      country === 'usa' ? 'United States' :
-                                      country.charAt(0).toUpperCase() + country.slice(1);
-                  countries.add(properCountry);
-                }
-              });
-              
-              // Additional city checks for common tourist destinations
-              if (pinText.includes('paris') || pinText.includes('nice') || pinText.includes('lyon')) {
-                countries.add("France");
-              }
-              if (pinText.includes('london') || pinText.includes('manchester')) {
-                countries.add("United Kingdom");
-              }
-              if (pinText.includes('rome') || pinText.includes('milan') || pinText.includes('venice')) {
-                countries.add("Italy");
-              }
-            }
+            const lat = parseFloat(row[1]).toFixed(1);
+            const lng = parseFloat(row[2]).toFixed(1);
+            locations.add(`${lat},${lng}`);
           }
         });
         
-        // Build the simplified stats HTML with just the two requested metrics
+        // Build the stats HTML
         let statsHTML = `
           <div class="stat-card">
-            <div class="stat-title">Unique USA States Visited</div>
-            <div class="stat-value">${states.size}</div>
-            <div class="stat-subtitle">${Array.from(states).sort().join(', ')}</div>
+            <div class="stat-title">Total Trips</div>
+            <div class="stat-value">${totalTrips}</div>
           </div>
           
           <div class="stat-card">
-            <div class="stat-title">Total Unique Countries</div>
-            <div class="stat-value">${countries.size}</div>
-            <div class="stat-subtitle">${Array.from(countries).sort().join(', ')}</div>
+            <div class="stat-title">Unique Locations</div>
+            <div class="stat-value">${locations.size}</div>
+            <div class="stat-subtitle">Approximate count based on geographic regions</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">Travel by Year</div>
+            <div style="margin-top: 12px;">
+        `;
+        
+        // Sort years from newest to oldest
+        const sortedYears = Object.keys(yearCounts).sort((a, b) => b - a);
+        
+        sortedYears.forEach(year => {
+          statsHTML += `
+            <div class="year-stat">
+              <span>${year}</span>
+              <span class="year-count">${yearCounts[year]} trips</span>
+            </div>
+          `;
+        });
+        
+        statsHTML += `
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">Most Visited Months</div>
+            <div style="margin-top: 12px;">
+        `;
+        
+        // Sort months by count (most to least)
+        const sortedMonths = Object.keys(monthCounts).sort((a, b) => monthCounts[b] - monthCounts[a]);
+        
+        // Show top 5 months
+        sortedMonths.slice(0, 5).forEach(month => {
+          statsHTML += `
+            <div class="year-stat">
+              <span>${month}</span>
+              <span class="year-count">${monthCounts[month]} trips</span>
+            </div>
+          `;
+        });
+        
+        statsHTML += `
+            </div>
           </div>
         `;
         
@@ -907,7 +897,7 @@
       </button>
       <button id="stats-button" class="map-button" title="View Travel Stats">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-          <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5-48-48-48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
+          <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
         </svg>
       </button>
     </div>
