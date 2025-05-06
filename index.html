@@ -708,34 +708,13 @@
         // Skip header row if present
         const rows = data.values.length > 1 ? data.values.slice(1) : data.values;
         
-        // Calculate stats
-        const totalTrips = rows.length;
-        const yearCounts = {};
-        const monthCounts = {};
-        
-        // For unique locations approximation (using lat/lng grid)
-        const locations = new Set();
+        // For tracking unique states and countries
         const states = new Set();
         const countries = new Set();
-        
-        // Debug rows for troubleshooting
-        console.log("Total rows for stats:", rows.length);
         
         // Process each pin
         rows.forEach(row => {
           if (row.length < 3) return; // Skip invalid rows
-          
-          // Count by year
-          const year = row[0];
-          yearCounts[year] = (yearCounts[year] || 0) + 1;
-          
-          // Count by month (if available)
-          if (row.length > 5) {
-            const month = row[5];
-            if (month) {
-              monthCounts[month] = (monthCounts[month] || 0) + 1;
-            }
-          }
           
           // Process location data
           if (row[1] && row[2]) {
@@ -743,190 +722,84 @@
             const lng = parseFloat(row[2]);
             
             if (!isNaN(lat) && !isNaN(lng)) {
-              // Add to unique locations (grid-based)
-              const gridLat = lat.toFixed(1);
-              const gridLng = lng.toFixed(1);
-              locations.add(`${gridLat},${gridLng}`);
-              
-              // France (approximately)
-              if (lat >= 41.0 && lat <= 51.5 && lng >= -5.0 && lng <= 10.0) {
-                if (row[3] && row[3].includes("France")) {
-                  console.log(`Adding France for pin: ${row[3]}`);
-                  countries.add("France");
-                }
-              }
-              
-              // USA boundaries (approximate)
-              if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
-                console.log(`Checking USA region for pin: ${row[3] || 'unnamed'} at ${lat}, ${lng}`);
-                countries.add("United States");
-                
-                // Northeast (ME, NH, VT, MA, RI, CT, NY, NJ, PA)
-                if (lat >= 39.5 && lat <= 47.5 && lng >= -80.0 && lng <= -66.0) {
-                  console.log(`  Adding Northeast Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Northeast Region");
-                }
-                
-                // Southeast (DE, MD, VA, WV, KY, NC, SC, TN, GA, FL, AL, MS)
-                else if (lat >= 25.0 && lat <= 39.5 && lng >= -92.0 && lng <= -75.0) {
-                  console.log(`  Adding Southeast Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Southeast Region");
-                }
-                
-                // Midwest (OH, MI, IN, WI, IL, MN, IA, MO)
-                else if (lat >= 36.0 && lat <= 49.5 && lng >= -97.0 && lng <= -80.0) {
-                  console.log(`  Adding Midwest Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Midwest Region");
-                }
-                
-                // Great Plains (ND, SD, NE, KS, OK, TX)
-                else if (lat >= 25.0 && lat <= 49.0 && lng >= -104.0 && lng <= -92.0) {
-                  console.log(`  Adding Great Plains Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Great Plains Region");
-                }
-                
-                // Rocky Mountains (MT, ID, WY, CO, UT)
-                else if (lat >= 36.0 && lat <= 49.0 && lng >= -116.0 && lng <= -104.0) {
-                  console.log(`  Adding Rocky Mountain Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Rocky Mountain Region");
-                }
-                
-                // Southwest (AZ, NM, NV)
-                else if (lat >= 31.0 && lat <= 42.0 && lng >= -125.0 && lng <= -108.0) {
-                  console.log(`  Adding Southwest Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Southwest Region");
-                }
-                
-                // Pacific (WA, OR, CA)
-                else if (lat >= 32.0 && lat <= 49.0 && lng >= -125.0 && lng <= -116.0) {
-                  console.log(`  Adding Pacific Region for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Pacific Region");
-                }
-                
-                // Alaska
-                else if (lat >= 51.0 && lat <= 71.5 && lng >= -180.0 && lng <= -130.0) {
-                  console.log(`  Adding Alaska for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Alaska");
-                }
-                
-                // Hawaii
-                else if (lat >= 18.0 && lat <= 23.0 && lng >= -160.0 && lng <= -154.0) {
-                  console.log(`  Adding Hawaii for pin: ${row[3] || 'unnamed'}`);
-                  states.add("Hawaii");
-                }
-              }
-              
-              // Use the pin's name to check for countries directly
+              // Get pin name and description for text analysis
               const pinName = row[3] || '';
               const pinDesc = row[4] || '';
               const pinText = (pinName + ' ' + pinDesc).toLowerCase();
               
+              // USA boundaries (approximate)
+              if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
+                countries.add("United States");
+                
+                // Check for specific USA states in the pin text
+                const usStates = {
+                  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+                  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+                  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+                  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+                  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+                  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+                  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+                  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+                  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+                  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY'
+                };
+                
+                // Check for state names in the pin text
+                for (const [stateName, stateCode] of Object.entries(usStates)) {
+                  if (pinText.includes(stateName) || pinText.includes(`, ${stateCode}`) || 
+                      pinText.includes(` ${stateCode},`) || pinText.includes(` ${stateCode} `)) {
+                    states.add(stateCode);
+                    break;
+                  }
+                }
+              }
+              
               // Check for specific countries in the pin name or description
-              if (pinText.includes('canada')) {
-                console.log(`Adding Canada based on pin text: "${pinName}"`);
-                countries.add("Canada");
-              }
-              if (pinText.includes('mexico')) {
-                console.log(`Adding Mexico based on pin text: "${pinName}"`);
-                countries.add("Mexico");
-              }
-              if (pinText.includes('france') || pinText.includes('paris') || pinText.includes('nice') || 
-                  pinText.includes('lyon') || pinText.includes('marseille')) {
-                console.log(`Adding France based on pin text: "${pinName}"`);
+              // Common countries to check
+              const countries_to_check = [
+                'canada', 'mexico', 'france', 'united kingdom', 'uk', 'england', 
+                'italy', 'spain', 'germany', 'japan', 'china', 'australia'
+              ];
+              
+              countries_to_check.forEach(country => {
+                if (pinText.includes(country)) {
+                  // Convert to proper case for display
+                  const properCountry = country === 'uk' ? 'United Kingdom' : 
+                                      country === 'usa' ? 'United States' :
+                                      country.charAt(0).toUpperCase() + country.slice(1);
+                  countries.add(properCountry);
+                }
+              });
+              
+              // Additional city checks for common tourist destinations
+              if (pinText.includes('paris') || pinText.includes('nice') || pinText.includes('lyon')) {
                 countries.add("France");
               }
-              if (pinText.includes('uk') || pinText.includes('united kingdom') || 
-                  pinText.includes('england') || pinText.includes('london')) {
-                console.log(`Adding United Kingdom based on pin text: "${pinName}"`);
+              if (pinText.includes('london') || pinText.includes('manchester')) {
                 countries.add("United Kingdom");
               }
-              if (pinText.includes('italy') || pinText.includes('rome') || 
-                  pinText.includes('milan') || pinText.includes('venice')) {
-                console.log(`Adding Italy based on pin text: "${pinName}"`);
+              if (pinText.includes('rome') || pinText.includes('milan') || pinText.includes('venice')) {
                 countries.add("Italy");
               }
             }
           }
         });
         
-        console.log("Countries detected:", Array.from(countries));
-        console.log("US Regions detected:", Array.from(states));
-        console.log("Number of countries:", countries.size);
-        console.log("Number of US regions:", states.size);
-        
-        // Build the stats HTML
+        // Build the simplified stats HTML with just the two requested metrics
         let statsHTML = `
           <div class="stat-card">
-            <div class="stat-title">Total Trips</div>
-            <div class="stat-value">${totalTrips}</div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-title">Unique Locations</div>
-            <div class="stat-value">${locations.size}</div>
-            <div class="stat-subtitle">Approximate count based on geographic regions</div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-title">Countries Visited</div>
-            <div class="stat-value">${countries.size}</div>
-            <div class="stat-subtitle">${Array.from(countries).sort().join(', ')}</div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-title">US Regions Visited</div>
+            <div class="stat-title">Unique USA States Visited</div>
             <div class="stat-value">${states.size}</div>
             <div class="stat-subtitle">${Array.from(states).sort().join(', ')}</div>
           </div>
           
           <div class="stat-card">
-            <div class="stat-title">Travel by Year</div>
-            <div style="margin-top: 12px;">
-        `;
-        
-        // Sort years from newest to oldest
-        const sortedYears = Object.keys(yearCounts).sort((a, b) => b - a);
-        
-        sortedYears.forEach(year => {
-          statsHTML += `
-            <div class="year-stat">
-              <span>${year}</span>
-              <span class="year-count">${yearCounts[year]} trips</span>
-            </div>
-          `;
-        });
-        
-        statsHTML += `
-            </div>
+            <div class="stat-title">Total Unique Countries</div>
+            <div class="stat-value">${countries.size}</div>
+            <div class="stat-subtitle">${Array.from(countries).sort().join(', ')}</div>
           </div>
         `;
-        
-        // Only show months section if we have month data
-        if (Object.keys(monthCounts).length > 0) {
-          statsHTML += `
-            <div class="stat-card">
-              <div class="stat-title">Most Visited Months</div>
-              <div style="margin-top: 12px;">
-          `;
-          
-          // Sort months by count (most to least)
-          const sortedMonths = Object.keys(monthCounts).sort((a, b) => monthCounts[b] - monthCounts[a]);
-          
-          // Show top 5 months
-          sortedMonths.slice(0, 5).forEach(month => {
-            statsHTML += `
-              <div class="year-stat">
-                <span>${month}</span>
-                <span class="year-count">${monthCounts[month]} trips</span>
-              </div>
-            `;
-          });
-          
-          statsHTML += `
-              </div>
-            </div>
-          `;
-        }
         
         statsContent.innerHTML = statsHTML;
         
@@ -1034,7 +907,7 @@
       </button>
       <button id="stats-button" class="map-button" title="View Travel Stats">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-          <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
+          <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5-48-48-48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
         </svg>
       </button>
     </div>
