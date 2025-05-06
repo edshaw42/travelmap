@@ -798,27 +798,8 @@
     function initMap() {
       // Clear any existing content in the map container
       const mapContainer = document.querySelector(".map-container");
-      mapContainer.innerHTML = `
-        <!-- Map controls -->
-        <div class="map-controls">
-          <button id="add-pin-button" class="map-button" title="Toggle Add Pin Mode">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
-              <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
-            </svg>
-          </button>
-          <button id="stats-button" class="map-button" title="View Travel Stats">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-              <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Add Pin Mode Indicator -->
-        <div id="add-pin-mode-indicator" class="add-pin-mode-indicator">
-          Add Pin Mode: Click anywhere on the map to add a location
-        </div>
-      `;
-
+      
+      // Maintain existing controls HTML structure instead of replacing it
       // Initialize the map with a valid Map ID
       map = new google.maps.Map(mapContainer, {
         center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
