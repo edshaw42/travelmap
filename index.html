@@ -30,7 +30,14 @@
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       position: relative;
-      z-index: 10;
+      z-index: 100; /* Increased z-index to ensure it's above the map */
+    }
+
+    /* Logo and title container */
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .logo svg {
@@ -44,12 +51,13 @@
       font-weight: 100;
       margin: 0;
       line-height: 1.1;
-      flex: 1;
     }
 
     .header-controls {
       display: flex;
       gap: 12px;
+      position: relative;
+      z-index: 101; /* Even higher z-index for the controls */
     }
 
     .map-container {
@@ -870,13 +878,15 @@
 </head>
 <body>
   <header>
-    <div class="logo">
-      <!-- Clean GPS Pin SVG -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
-        <path d="M192 0C86 0 0 86 0 192c0 77.4 108.7 215.3 162.7 276.4 15.5 17.6 42.1 17.6 57.6 0C275.3 407.3 384 269.4 384 192 384 86 298 0 192 0zm0 272a80 80 0 1 1 0-160 80 80 0 1 1 0 160z"/>
-      </svg>
+    <div class="header-left">
+      <div class="logo">
+        <!-- Clean GPS Pin SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+          <path d="M192 0C86 0 0 86 0 192c0 77.4 108.7 215.3 162.7 276.4 15.5 17.6 42.1 17.6 57.6 0C275.3 407.3 384 269.4 384 192 384 86 298 0 192 0zm0 272a80 80 0 1 1 0-160 80 80 0 1 1 0 160z"/>
+        </svg>
+      </div>
+      <h1>Explored by the Shaws</h1>
     </div>
-    <h1>Explored by the Shaws</h1>
     
     <!-- Map controls moved to header -->
     <div class="header-controls">
