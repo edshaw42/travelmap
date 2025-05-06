@@ -663,11 +663,11 @@
         if (isAddPinMode) {
           addPinButton.classList.add('active');
           addPinIndicator.classList.add('visible');
-          mapContainer.style.cursor = 'crosshair';
+          mapContainer.style.cursor = 'crosshair'; // Set crosshair cursor when in add pin mode
         } else {
           addPinButton.classList.remove('active');
           addPinIndicator.classList.remove('visible');
-          mapContainer.style.cursor = 'default';
+          mapContainer.style.cursor = 'default'; // Return to default cursor when not in add mode
         }
       });
       
@@ -713,26 +713,70 @@
         
         // For unique locations approximation (using lat/lng grid)
         const locations = new Set();
+        const states = new Set();
+        const countries = new Set();
         
-        rows.forEach(row => {
-          // Count by year
-          const year = row[0];
-          yearCounts[year] = (yearCounts[year] || 0) + 1;
-          
-          // Count by month (if available)
-          if (row.length > 5) {
-            const month = row[5];
-            monthCounts[month] = (monthCounts[month] || 0) + 1;
+        // Process each pin
+        const processLocations = async () => {
+          for (const row of rows) {
+            // Count by year
+            const year = row[0];
+            yearCounts[year] = (yearCounts[year] || 0) + 1;
+            
+            // Count by month (if available)
+            if (row.length > 5) {
+              const month = row[5];
+              monthCounts[month] = (monthCounts[month] || 0) + 1;
+            }
+            
+            // Approximate unique locations and determine state/country
+            if (row[1] && row[2]) {
+              const lat = parseFloat(row[1]);
+              const lng = parseFloat(row[2]);
+              
+              if (!isNaN(lat) && !isNaN(lng)) {
+                // Add to unique locations (grid-based)
+                const gridLat = lat.toFixed(1);
+                const gridLng = lng.toFixed(1);
+                locations.add(`${gridLat},${gridLng}`);
+                
+                // Get state and country data
+                try {
+                  const geoResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`);
+                  const geoData = await geoResponse.json();
+                  
+                  if (geoData.results && geoData.results.length > 0) {
+                    // Process address components to extract state and country
+                    const addressComponents = geoData.results[0].address_components;
+                    
+                    let state = null;
+                    let country = null;
+                    
+                    for (const component of addressComponents) {
+                      // Find state/province
+                      if (component.types.includes('administrative_area_level_1')) {
+                        state = component.long_name;
+                      }
+                      
+                      // Find country
+                      if (component.types.includes('country')) {
+                        country = component.long_name;
+                      }
+                    }
+                    
+                    if (state) states.add(state);
+                    if (country) countries.add(country);
+                  }
+                } catch (error) {
+                  console.error('Error getting location data:', error);
+                }
+              }
+            }
           }
-          
-          // Approximate unique locations by rounding coordinates to 1 decimal place
-          // This creates roughly 11km x 11km grid cells
-          if (row[1] && row[2]) {
-            const lat = parseFloat(row[1]).toFixed(1);
-            const lng = parseFloat(row[2]).toFixed(1);
-            locations.add(`${lat},${lng}`);
-          }
-        });
+        };
+        
+        // Process locations in batches to avoid rate limiting
+        await processLocations();
         
         // Build the stats HTML
         let statsHTML = `
@@ -745,6 +789,18 @@
             <div class="stat-title">Unique Locations</div>
             <div class="stat-value">${locations.size}</div>
             <div class="stat-subtitle">Approximate count based on geographic regions</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">Countries Visited</div>
+            <div class="stat-value">${countries.size}</div>
+            <div class="stat-subtitle">${Array.from(countries).sort().join(', ')}</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">States/Provinces Visited</div>
+            <div class="stat-value">${states.size}</div>
+            <div class="stat-subtitle">${Array.from(states).sort().join(', ')}</div>
           </div>
           
           <div class="stat-card">
