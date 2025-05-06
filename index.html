@@ -748,93 +748,111 @@
               const gridLng = lng.toFixed(1);
               locations.add(`${gridLat},${gridLng}`);
               
-              console.log(`Processing pin at ${lat}, ${lng}`);
+              // France (approximately)
+              if (lat >= 41.0 && lat <= 51.5 && lng >= -5.0 && lng <= 10.0) {
+                if (row[3] && row[3].includes("France")) {
+                  console.log(`Adding France for pin: ${row[3]}`);
+                  countries.add("France");
+                }
+              }
               
               // USA boundaries (approximate)
               if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
-                console.log("Adding USA");
+                console.log(`Checking USA region for pin: ${row[3] || 'unnamed'} at ${lat}, ${lng}`);
                 countries.add("United States");
                 
-                // Northeast
-                if (lat >= 37.0 && lat <= 47.5 && lng >= -80.0 && lng <= -66.0) {
-                  console.log("  Adding Northeast Region");
+                // Northeast (ME, NH, VT, MA, RI, CT, NY, NJ, PA)
+                if (lat >= 39.5 && lat <= 47.5 && lng >= -80.0 && lng <= -66.0) {
+                  console.log(`  Adding Northeast Region for pin: ${row[3] || 'unnamed'}`);
                   states.add("Northeast Region");
                 }
                 
-                // Southeast
-                if (lat >= 25.0 && lat <= 39.0 && lng >= -90.0 && lng <= -75.0) {
-                  console.log("  Adding Southeast Region");
+                // Southeast (DE, MD, VA, WV, KY, NC, SC, TN, GA, FL, AL, MS)
+                else if (lat >= 25.0 && lat <= 39.5 && lng >= -92.0 && lng <= -75.0) {
+                  console.log(`  Adding Southeast Region for pin: ${row[3] || 'unnamed'}`);
                   states.add("Southeast Region");
                 }
                 
-                // Midwest
-                if (lat >= 37.0 && lat <= 49.5 && lng >= -97.0 && lng <= -80.5) {
-                  console.log("  Adding Midwest Region");
+                // Midwest (OH, MI, IN, WI, IL, MN, IA, MO)
+                else if (lat >= 36.0 && lat <= 49.5 && lng >= -97.0 && lng <= -80.0) {
+                  console.log(`  Adding Midwest Region for pin: ${row[3] || 'unnamed'}`);
                   states.add("Midwest Region");
                 }
                 
-                // South Central
-                if (lat >= 25.0 && lat <= 37.0 && lng >= -106.5 && lng <= -88.5) {
-                  console.log("  Adding South Central Region");
-                  states.add("South Central Region");
+                // Great Plains (ND, SD, NE, KS, OK, TX)
+                else if (lat >= 25.0 && lat <= 49.0 && lng >= -104.0 && lng <= -92.0) {
+                  console.log(`  Adding Great Plains Region for pin: ${row[3] || 'unnamed'}`);
+                  states.add("Great Plains Region");
                 }
                 
-                // Mountain West
-                if (lat >= 31.0 && lat <= 49.0 && lng >= -120.0 && lng <= -104.0) {
-                  console.log("  Adding Mountain West Region");
-                  states.add("Mountain West Region");
+                // Rocky Mountains (MT, ID, WY, CO, UT)
+                else if (lat >= 36.0 && lat <= 49.0 && lng >= -116.0 && lng <= -104.0) {
+                  console.log(`  Adding Rocky Mountain Region for pin: ${row[3] || 'unnamed'}`);
+                  states.add("Rocky Mountain Region");
                 }
                 
-                // West Coast
-                if (lat >= 32.0 && lat <= 49.0 && lng >= -125.0 && lng <= -114.0) {
-                  console.log("  Adding West Coast Region");
-                  states.add("West Coast Region");
+                // Southwest (AZ, NM, NV)
+                else if (lat >= 31.0 && lat <= 42.0 && lng >= -125.0 && lng <= -108.0) {
+                  console.log(`  Adding Southwest Region for pin: ${row[3] || 'unnamed'}`);
+                  states.add("Southwest Region");
+                }
+                
+                // Pacific (WA, OR, CA)
+                else if (lat >= 32.0 && lat <= 49.0 && lng >= -125.0 && lng <= -116.0) {
+                  console.log(`  Adding Pacific Region for pin: ${row[3] || 'unnamed'}`);
+                  states.add("Pacific Region");
                 }
                 
                 // Alaska
-                if (lat >= 51.0 && lat <= 71.5 && lng >= -180.0 && lng <= -130.0) {
-                  console.log("  Adding Alaska");
+                else if (lat >= 51.0 && lat <= 71.5 && lng >= -180.0 && lng <= -130.0) {
+                  console.log(`  Adding Alaska for pin: ${row[3] || 'unnamed'}`);
                   states.add("Alaska");
                 }
                 
                 // Hawaii
-                if (lat >= 18.0 && lat <= 23.0 && lng >= -160.0 && lng <= -154.0) {
-                  console.log("  Adding Hawaii");
+                else if (lat >= 18.0 && lat <= 23.0 && lng >= -160.0 && lng <= -154.0) {
+                  console.log(`  Adding Hawaii for pin: ${row[3] || 'unnamed'}`);
                   states.add("Hawaii");
                 }
               }
               
-              // Canada
-              if (lat >= 48.0 && lat <= 83.0 && lng >= -141.0 && lng <= -52.0) {
-                console.log("Adding Canada");
+              // Use the pin's name to check for countries directly
+              const pinName = row[3] || '';
+              const pinDesc = row[4] || '';
+              const pinText = (pinName + ' ' + pinDesc).toLowerCase();
+              
+              // Check for specific countries in the pin name or description
+              if (pinText.includes('canada')) {
+                console.log(`Adding Canada based on pin text: "${pinName}"`);
                 countries.add("Canada");
               }
-              
-              // Mexico
-              if (lat >= 14.0 && lat <= 33.0 && lng >= -118.0 && lng <= -86.0) {
-                console.log("Adding Mexico");
+              if (pinText.includes('mexico')) {
+                console.log(`Adding Mexico based on pin text: "${pinName}"`);
                 countries.add("Mexico");
               }
-              
-              // Europe (very rough approximation)
-              if (lat >= 36.0 && lat <= 70.0 && lng >= -10.0 && lng <= 40.0) {
-                console.log("Adding Europe");
-                countries.add("Europe");
+              if (pinText.includes('france') || pinText.includes('paris') || pinText.includes('nice') || 
+                  pinText.includes('lyon') || pinText.includes('marseille')) {
+                console.log(`Adding France based on pin text: "${pinName}"`);
+                countries.add("France");
               }
-              
-              // Asia
-              if (lat >= 0.0 && lat <= 55.0 && lng >= 60.0 && lng <= 145.0) {
-                console.log("Adding Asia");
-                countries.add("Asia");
+              if (pinText.includes('uk') || pinText.includes('united kingdom') || 
+                  pinText.includes('england') || pinText.includes('london')) {
+                console.log(`Adding United Kingdom based on pin text: "${pinName}"`);
+                countries.add("United Kingdom");
+              }
+              if (pinText.includes('italy') || pinText.includes('rome') || 
+                  pinText.includes('milan') || pinText.includes('venice')) {
+                console.log(`Adding Italy based on pin text: "${pinName}"`);
+                countries.add("Italy");
               }
             }
           }
         });
         
         console.log("Countries detected:", Array.from(countries));
-        console.log("States detected:", Array.from(states));
+        console.log("US Regions detected:", Array.from(states));
         console.log("Number of countries:", countries.size);
-        console.log("Number of states:", states.size);
+        console.log("Number of US regions:", states.size);
         
         // Build the stats HTML
         let statsHTML = `
