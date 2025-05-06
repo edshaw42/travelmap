@@ -130,8 +130,8 @@
         // Create a form that will submit to the Google Apps Script
         const form = document.createElement('form');
         form.method = 'POST';
-        // Use the latest deployment URL - verify this is correct
-        form.action = 'https://script.google.com/macros/s/AKfycbzW37f28Lsh1BXBcqpkZ4HFA9z6I4OEhhku8TfXwG9LErxRKAynQLryeR0UJo4LKP6A/exec';
+        // Use a cache-busting parameter to avoid caching issues
+        form.action = 'https://script.google.com/macros/s/AKfycbzW37f28Lsh1BXBcqpkZ4HFA9z6I4OEhhku8TfXwG9LErxRKAynQLryeR0UJo4LKP6A/exec?_=' + new Date().getTime();
         form.target = 'hidden-iframe';
         
         // Add form fields for each property in the pin object
@@ -149,24 +149,28 @@
         
         console.log("Submitting form to Google Apps Script");
         
+        // Set a timeout to check Google Sheets after submission
+        setTimeout(() => {
+          // After a delay, fetch the pins from Google Sheets to see if our new data is there
+          fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Fetched sheet data to verify pin was added:", data);
+              // Check the latest row
+              if (data.values && data.values.length > 0) {
+                const lastRow = data.values[data.values.length - 1];
+                console.log("Latest row in sheet:", lastRow);
+              }
+            })
+            .catch(err => console.error("Error verifying pin addition:", err));
+        }, 3000); // Check after 3 seconds
+        
         // Handle the iframe load event
         iframe.onload = function() {
           console.log("Form submitted successfully");
           
-          // Try to get the response content for debugging
-          try {
-            const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
-            const responseText = iframeContent.body.innerText;
-            console.log("Response from Google Apps Script:", responseText);
-            
-            // Check if there's an error indication in the response
-            if (responseText.includes("Error")) {
-              console.error("Error detected in response:", responseText);
-              alert("There was an issue saving the data. Check the console for details.");
-            }
-          } catch(e) {
-            console.log("Could not read iframe response:", e);
-          }
+          // Don't try to read the iframe content - it will cause CORS errors
+          // Just assume success if we got here
           
           // Clean up
           document.body.removeChild(form);
