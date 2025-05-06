@@ -663,11 +663,13 @@
         if (isAddPinMode) {
           addPinButton.classList.add('active');
           addPinIndicator.classList.add('visible');
-          mapContainer.style.cursor = 'crosshair'; // Set crosshair cursor when in add pin mode
+          document.querySelector('.map-container').style.cursor = 'crosshair';
+          console.log('Cursor set to crosshair', document.querySelector('.map-container').style.cursor);
         } else {
           addPinButton.classList.remove('active');
           addPinIndicator.classList.remove('visible');
-          mapContainer.style.cursor = 'default'; // Return to default cursor when not in add mode
+          document.querySelector('.map-container').style.cursor = 'default';
+          console.log('Cursor set to default', document.querySelector('.map-container').style.cursor);
         }
       });
       
@@ -748,11 +750,102 @@
               if (lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0) {
                 countries.add("United States");
                 
-                // Rough state boundaries (very approximate)
-                // ... existing state detection code ...
+                // Northeast
+                if (lat >= 37.0 && lat <= 47.5 && lng >= -80.0 && lng <= -66.0) {
+                  states.add("Northeast Region");
+                  if (lng >= -73.5 && lat >= 41.0) states.add("New England");
+                  if (lng <= -73.5 && lat >= 39.5) states.add("Mid-Atlantic");
+                }
+                
+                // Southeast
+                if (lat >= 25.0 && lat <= 39.0 && lng >= -90.0 && lng <= -75.0) {
+                  states.add("Southeast Region");
+                  // Major Southeast states
+                  if (lat <= 31.0 && lng >= -87.5) states.add("Florida");
+                  if (lat >= 32.0 && lat <= 35.0) states.add("The Carolinas");
+                  if (lat >= 36.5 && lat <= 39.0) states.add("Virginia");
+                }
+                
+                // Midwest
+                if (lat >= 37.0 && lat <= 49.5 && lng >= -97.0 && lng <= -80.5) {
+                  states.add("Midwest Region");
+                  if (lat >= 41.0 && lng >= -84.0) states.add("Great Lakes");
+                  if (lat <= 41.0 && lng <= -84.0) states.add("Ohio Valley");
+                }
+                
+                // South Central
+                if (lat >= 25.0 && lat <= 37.0 && lng >= -106.5 && lng <= -88.5) {
+                  states.add("South Central Region");
+                  if (lat <= 33.0 && lng <= -90.0) states.add("Gulf Coast");
+                  if (lat >= 30.0 && lng <= -93.5) states.add("Texas");
+                }
+                
+                // Mountain West
+                if (lat >= 31.0 && lat <= 49.0 && lng >= -120.0 && lng <= -104.0) {
+                  states.add("Mountain West Region");
+                  if (lat <= 37.0) states.add("Southwest");
+                  if (lat >= 41.0) states.add("Northern Rockies");
+                }
+                
+                // West Coast
+                if (lat >= 32.0 && lat <= 49.0 && lng >= -125.0 && lng <= -114.0) {
+                  states.add("West Coast Region");
+                  if (lat <= 42.0) states.add("California");
+                  if (lat >= 42.0 && lat <= 46.5) states.add("Pacific Northwest");
+                }
+                
+                // Alaska
+                if (lat >= 51.0 && lat <= 71.5 && lng >= -180.0 && lng <= -130.0) {
+                  states.add("Alaska");
+                }
+                
+                // Hawaii
+                if (lat >= 18.0 && lat <= 23.0 && lng >= -160.0 && lng <= -154.0) {
+                  states.add("Hawaii");
+                }
               }
               
-              // ... existing country detection code ...
+              // Other countries
+              // Canada
+              if (lat >= 48.0 && lat <= 83.0 && lng >= -141.0 && lng <= -52.0) {
+                countries.add("Canada");
+              }
+              
+              // Mexico
+              if (lat >= 14.0 && lat <= 33.0 && lng >= -118.0 && lng <= -86.0) {
+                countries.add("Mexico");
+              }
+              
+              // Europe (very rough approximation)
+              if (lat >= 36.0 && lat <= 70.0 && lng >= -10.0 && lng <= 40.0) {
+                countries.add("Europe");
+                
+                // Western Europe
+                if (lat >= 43.0 && lat <= 55.0 && lng >= -5.0 && lng <= 15.0) {
+                  if (lat >= 48.0) countries.add("United Kingdom");
+                  if (lat <= 48.0 && lat >= 43.0) countries.add("France");
+                  if (lat >= 47.0 && lat <= 55.0 && lng >= 5.0) countries.add("Germany");
+                }
+                
+                // Southern Europe
+                if (lat <= 45.0 && lat >= 36.0 && lng >= 5.0 && lng <= 20.0) {
+                  countries.add("Mediterranean");
+                  if (lat >= 36.0 && lat <= 44.0 && lng <= 3.5) countries.add("Spain");
+                  if (lat >= 42.5 && lat <= 47.0 && lng >= 6.5) countries.add("Italy");
+                }
+              }
+              
+              // Asia
+              if (lat >= 0.0 && lat <= 55.0 && lng >= 60.0 && lng <= 145.0) {
+                countries.add("Asia");
+                // East Asia
+                if (lat >= 30.0 && lat <= 46.0 && lng >= 128.0 && lng <= 146.0) {
+                  countries.add("Japan");
+                }
+                if (lat >= 18.0 && lat <= 53.0 && lng >= 73.0 && lng <= 135.0) {
+                  countries.add("China");
+                }
+              }
             }
           }
         });
