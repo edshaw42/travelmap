@@ -55,12 +55,12 @@
     /* Controls container */
     .map-controls {
       position: absolute;
-      bottom: 24px;
+      top: 24px;
       right: 24px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      z-index: 10;
+      z-index: 100; /* Increased z-index to ensure visibility */
     }
 
     .map-button {
@@ -359,7 +359,7 @@
       }
       
       .map-controls {
-        bottom: 16px;
+        top: 16px;
         right: 16px;
       }
     }
