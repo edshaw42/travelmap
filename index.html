@@ -867,40 +867,42 @@
         const uniqueCountries = new Set();
         const uniqueCities = new Set();
         
+        // Column indices based on actual spreadsheet structure:
+        // Timestamp[0], Year[1], Month[2], Name[3], Description[4], Latitude[5], Longitude[6], City[7], State[8], Country[9]
+        
         rows.forEach(row => {
-          const year = row[0];
+          // Year is index 1
+          const year = row[1];
           yearCounts[year] = (yearCounts[year] || 0) + 1;
           
-          // Fix: Get month from column G (index 6) instead of using wrong column
-          const month = row[6]; // Month is in column G (index 6)
+          // Month is at index 2 according to your spreadsheet structure
+          const month = row[2]; 
           if (month) {
             monthCounts[month] = (monthCounts[month] || 0) + 1;
           }
           
-          if (row[1] && row[2]) {
-            const lat = parseFloat(row[1]);
-            const lng = parseFloat(row[2]);
+          // Parse lat/lng from columns 5 and 6
+          if (row[5] && row[6]) {
+            const lat = parseFloat(row[5]);
+            const lng = parseFloat(row[6]);
             locations.add(`${lat.toFixed(1)},${lng.toFixed(1)}`);
           }
           
-          // Get state and country from pin data
-          // Sheet structure: Timestamp | Year | Month | Name | Description | Latitude | Longitude | City | State | Country
-          if (row.length >= 10) { // Make sure row has enough columns
-            const city = row[7]; // City is column 8 (index 7)
-            const state = row[8]; // State is column 9 (index 8)
-            const country = row[9]; // Country is column 10 (index 9)
+          // Get city, state and country data
+          const city = row[7]; // City is at index 7
+          const state = row[8]; // State is at index 8
+          const country = row[9]; // Country is at index 9
             
-            if (city && city.trim() !== "") {
-              uniqueCities.add(city.trim());
-            }
+          if (city && city.trim() !== "") {
+            uniqueCities.add(city.trim());
+          }
             
-            if (state && state.trim() !== "") {
-              uniqueStates.add(state.trim());
-            }
+          if (state && state.trim() !== "") {
+            uniqueStates.add(state.trim());
+          }
             
-            if (country && country.trim() !== "") {
-              uniqueCountries.add(country.trim());
-            }
+          if (country && country.trim() !== "") {
+            uniqueCountries.add(country.trim());
           }
         });
         
