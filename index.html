@@ -433,24 +433,28 @@
         
         // Add form fields for each property in the pin object
         for (const key in pin) {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = pin[key] || ""; // Ensure empty strings instead of undefined
-          form.appendChild(input);
-          console.log(`Added field ${key} with value ${pin[key]}`);
+          if (pin.hasOwnProperty(key)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = pin[key] !== undefined && pin[key] !== null ? pin[key] : ""; // Ensure empty strings instead of undefined
+            form.appendChild(input);
+            console.log(`Added field ${key} with value ${input.value}`);
+          }
         }
         
-        // Explicitly ensure city, state, country are included (in case they're not in pin object)
+        // Explicitly ensure city, state, country are included 
+        // This is a failsafe in case they weren't in the pin object
         const requiredFields = ['city', 'state', 'country'];
         requiredFields.forEach(field => {
-          if (!pin.hasOwnProperty(field)) {
+          if (!form.querySelector(`input[name="${field}"]`)) {
+            const fieldValue = document.getElementById(field)?.value || "";
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = field;
-            input.value = document.getElementById(field)?.value || "";
+            input.value = fieldValue;
             form.appendChild(input);
-            console.log(`Added missing field ${field} with value ${input.value}`);
+            console.log(`Added missing field ${field} with value ${fieldValue}`);
           }
         });
         
