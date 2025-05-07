@@ -689,72 +689,87 @@
       });
     }
     
+    async function reverseGeocode(lat, lng) {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          const addressComponents = data.results[0].address_components;
+          const state = addressComponents.find(component => component.types.includes("administrative_area_level_1"))?.long_name || null;
+          const country = addressComponents.find(component => component.types.includes("country"))?.long_name || null;
+          return { state, country };
+        }
+      } catch (error) {
+        console.error("Error in reverse geocoding:", error);
+      }
+      return { state: null, country: null };
+    }
+
     async function generateTravelStats() {
       const statsContent = document.getElementById('stats-content');
       statsContent.innerHTML = '<p>Loading stats...</p>';
-      
       try {
         // Fetch all pins data
         const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`);
         const data = await response.json();
-        
         if (!data.values || data.values.length <= 1) {
           statsContent.innerHTML = '<p>No travel data available yet.</p>';
           return;
         }
-        
-        // Skip header row if present
         const rows = data.values.length > 1 ? data.values.slice(1) : data.values;
-        
-        // Calculate stats
         const totalTrips = rows.length;
         const yearCounts = {};
         const monthCounts = {};
-        
-        // For unique locations approximation (using lat/lng grid)
         const locations = new Set();
-        
-        rows.forEach(row => {
-          // Count by year
+        // New: Sets for unique states and countries
+        const uniqueStates = new Set();
+        const uniqueCountries = new Set();
+        // Prepare all reverse geocode promises
+        const geocodePromises = rows.map(async row => {
           const year = row[0];
           yearCounts[year] = (yearCounts[year] || 0) + 1;
-          
-          // Count by month (if available)
           if (row.length > 5) {
             const month = row[5];
             monthCounts[month] = (monthCounts[month] || 0) + 1;
           }
-          
-          // Approximate unique locations by rounding coordinates to 1 decimal place
-          // This creates roughly 11km x 11km grid cells
           if (row[1] && row[2]) {
-            const lat = parseFloat(row[1]).toFixed(1);
-            const lng = parseFloat(row[2]).toFixed(1);
-            locations.add(`${lat},${lng}`);
+            const lat = parseFloat(row[1]);
+            const lng = parseFloat(row[2]);
+            locations.add(`${lat.toFixed(1)},${lng.toFixed(1)}`);
+            // Reverse geocode for state/country
+            const geo = await reverseGeocode(lat, lng);
+            if (geo.state) uniqueStates.add(geo.state);
+            if (geo.country) uniqueCountries.add(geo.country);
           }
         });
-        
-        // Build the stats HTML
+        // Wait for all geocoding to finish
+        await Promise.all(geocodePromises);
         let statsHTML = `
           <div class="stat-card">
             <div class="stat-title">Total Trips</div>
             <div class="stat-value">${totalTrips}</div>
           </div>
-          
           <div class="stat-card">
             <div class="stat-title">Unique Locations</div>
             <div class="stat-value">${locations.size}</div>
             <div class="stat-subtitle">Approximate count based on geographic regions</div>
           </div>
-          
+          <div class="stat-card">
+            <div class="stat-title">States Visited</div>
+            <div class="stat-value">${uniqueStates.size}</div>
+            <div class="stat-subtitle">${[...uniqueStates].sort().join(', ')}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Countries Visited</div>
+            <div class="stat-value">${uniqueCountries.size}</div>
+            <div class="stat-subtitle">${[...uniqueCountries].sort().join(', ')}</div>
+          </div>
           <div class="stat-card">
             <div class="stat-title">Travel by Year</div>
             <div style="margin-top: 12px;">
         `;
-        
-        // Sort years from newest to oldest
         const sortedYears = Object.keys(yearCounts).sort((a, b) => b - a);
-        
         sortedYears.forEach(year => {
           statsHTML += `
             <div class="year-stat">
@@ -763,20 +778,14 @@
             </div>
           `;
         });
-        
         statsHTML += `
             </div>
           </div>
-          
           <div class="stat-card">
             <div class="stat-title">Most Visited Months</div>
             <div style="margin-top: 12px;">
         `;
-        
-        // Sort months by count (most to least)
         const sortedMonths = Object.keys(monthCounts).sort((a, b) => monthCounts[b] - monthCounts[a]);
-        
-        // Show top 5 months
         sortedMonths.slice(0, 5).forEach(month => {
           statsHTML += `
             <div class="year-stat">
@@ -785,14 +794,11 @@
             </div>
           `;
         });
-        
         statsHTML += `
             </div>
           </div>
         `;
-        
         statsContent.innerHTML = statsHTML;
-        
       } catch (error) {
         console.error("Error generating travel stats:", error);
         statsContent.innerHTML = '<p>Error loading stats. Please try again later.</p>';
