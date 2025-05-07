@@ -387,13 +387,18 @@
           const rows = data.values.length > 1 ? data.values.slice(1) : data.values;
           
           rows.forEach(row => {
-            if (row.length >= 5) {
-              const year = row[0];
-              const lat = parseFloat(row[1]);
-              const lng = parseFloat(row[2]);
-              const name = row[3];
-              const description = row[4];
-              const month = row.length > 5 ? row[5] : ""; // In case month is not in older data
+            if (row.length >= 7) { // Make sure we have at least the core fields
+              // Map to the correct columns according to sheet layout:
+              // Timestamp | Year | Month | Name | Description | Latitude | Longitude | City | State | Country
+              const year = row[1]; // Year is column 2
+              const month = row[2]; // Month is column 3
+              const name = row[3]; // Name is column 4
+              const description = row[4]; // Description is column 5
+              const lat = parseFloat(row[5]); // Latitude is column 6
+              const lng = parseFloat(row[6]); // Longitude is column 7
+              const city = row.length > 7 ? row[7] : ""; // City is column 8 (if exists)
+              const state = row.length > 8 ? row[8] : ""; // State is column 9 (if exists)
+              const country = row.length > 9 ? row[9] : ""; // Country is column 10 (if exists)
               
               if (!isNaN(lat) && !isNaN(lng)) {
                 addPinToMap({
@@ -402,7 +407,10 @@
                   lng,
                   name,
                   description,
-                  month
+                  month,
+                  city,
+                  state,
+                  country
                 });
               }
             }
@@ -534,7 +542,7 @@
           
           // Second pass: If still missing data, look for alternate terms
           if (!city || !state || !country) {
-            for (let i = 0; i < Math.min(geo.results.length, 5); i++) {
+            for (let i = 0; Math.min(geo.results.length, 5); i++) {
               const result = geo.results[i];
               const components = result.address_components;
               
@@ -971,10 +979,13 @@
         
         // Process each pin to extract state and country
         rows.forEach(row => {
-          // Check if we have state and country data (from columns 7 and 8)
-          if (row.length >= 9) {
-            const state = row[7];
-            const country = row[8];
+          // According to the sheet layout:
+          // Timestamp | Year | Month | Name | Description | Latitude | Longitude | City | State | Country
+          if (row.length >= 10) { // Make sure we have enough fields
+            // State is column 8 (index 8)
+            const state = row[8];
+            // Country is column 9 (index 9)
+            const country = row[9];
             
             if (state && state.trim() !== "") {
               uniqueStates.add(state.trim());
