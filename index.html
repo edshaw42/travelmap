@@ -443,20 +443,12 @@
           }
         }
         
-        // Explicitly ensure city, state, country are included 
-        // This is a failsafe in case they weren't in the pin object
-        const requiredFields = ['city', 'state', 'country'];
-        requiredFields.forEach(field => {
-          if (!form.querySelector(`input[name="${field}"]`)) {
-            const fieldValue = document.getElementById(field)?.value || "";
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = field;
-            input.value = fieldValue;
-            form.appendChild(input);
-            console.log(`Added missing field ${field} with value ${fieldValue}`);
-          }
-        });
+        // Add special flag for updating unique state/country counts
+        const updateCountsInput = document.createElement('input');
+        updateCountsInput.type = 'hidden';
+        updateCountsInput.name = 'updateUniqueCounts';
+        updateCountsInput.value = 'true';
+        form.appendChild(updateCountsInput);
         
         // Add the form to the document
         document.body.appendChild(form);
@@ -465,7 +457,6 @@
         
         // Set a timeout to check Google Sheets after submission
         setTimeout(() => {
-          // After a delay, fetch the pins from Google Sheets to see if our new data is there
           fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`)
             .then(response => response.json())
             .then(data => {
@@ -482,9 +473,6 @@
         // Handle the iframe load event
         iframe.onload = function() {
           console.log("Form submitted successfully");
-          
-          // Don't try to read the iframe content - it will cause CORS errors
-          // Just assume success if we got here
           
           // Clean up
           document.body.removeChild(form);
