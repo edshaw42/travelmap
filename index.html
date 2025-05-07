@@ -865,6 +865,7 @@
         // Track unique states and countries directly here
         const uniqueStates = new Set();
         const uniqueCountries = new Set();
+        const uniqueCities = new Set();
         
         rows.forEach(row => {
           const year = row[0];
@@ -884,8 +885,13 @@
           // Get state and country from pin data
           // Sheet structure: Timestamp | Year | Month | Name | Description | Latitude | Longitude | City | State | Country
           if (row.length >= 10) { // Make sure row has enough columns
+            const city = row[7]; // City is column 8 (index 7)
             const state = row[8]; // State is column 9 (index 8)
             const country = row[9]; // Country is column 10 (index 9)
+            
+            if (city && city.trim() !== "") {
+              uniqueCities.add(city.trim());
+            }
             
             if (state && state.trim() !== "") {
               uniqueStates.add(state.trim());
@@ -898,6 +904,7 @@
         });
         
         // Get the counts directly from our Sets
+        const citiesVisited = uniqueCities.size;
         const statesVisited = uniqueStates.size;
         const countriesVisited = uniqueCountries.size;
         
@@ -910,6 +917,10 @@
             <div class="stat-title">Unique Locations</div>
             <div class="stat-value">${locations.size}</div>
             <div class="stat-subtitle">Approximate count based on geographic regions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Unique Cities</div>
+            <div class="stat-value">${citiesVisited}</div>
           </div>
           <div class="stat-card">
             <div class="stat-title">States Visited</div>
