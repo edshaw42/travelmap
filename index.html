@@ -488,6 +488,55 @@
       });
     }
 
+    async function geocodeLatLng(lat, lng) {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`;
+      const response = await fetch(url);
+      const geo = await response.json();
+      let city = "";
+      let state = "";
+      let country = "";
+      if (geo.status === "OK" && geo.results.length > 0) {
+        const components = geo.results[0].address_components;
+        components.forEach(function(component) {
+          if (component.types.includes("locality")) {
+            city = component.long_name;
+          }
+          if (component.types.includes("administrative_area_level_1")) {
+            state = component.long_name;
+          }
+          if (component.types.includes("country")) {
+            country = component.long_name;
+          }
+        });
+      }
+      return { city, state, country };
+    }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const month = document.getElementById("month").value;
+      const description = document.getElementById("description").value;
+      const year = document.getElementById("year").value;
+      const lat = parseFloat(document.getElementById("latitude").value);
+      const lng = parseFloat(document.getElementById("longitude").value);
+
+      // Geocode to get city, state, country
+      const { city, state, country } = await geocodeLatLng(lat, lng);
+      document.getElementById("city").value = city;
+      document.getElementById("state").value = state;
+      document.getElementById("country").value = country;
+
+      const pin = { year, lat, lng, name, description, month, city, state, country };
+
+      addPinToMap(pin);
+      await addPinToSheet(pin);
+
+      event.target.reset();
+      document.getElementById("location-form-container").style.display = "none";
+    }
+
     function addPinToMap({ year, lat, lng, name, description, month }) {
       const color = getColorByYear(year);
 
@@ -944,6 +993,10 @@
         <label for="longitude">Longitude</label>
         <input type="text" id="longitude" readonly />
       </div>
+      
+      <input type="hidden" id="city" name="city" />
+      <input type="hidden" id="state" name="state" />
+      <input type="hidden" id="country" name="country" />
       
       <div class="button-group">
         <button type="submit">Add Location</button>
