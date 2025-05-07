@@ -436,10 +436,23 @@
           const input = document.createElement('input');
           input.type = 'hidden';
           input.name = key;
-          input.value = pin[key];
+          input.value = pin[key] || ""; // Ensure empty strings instead of undefined
           form.appendChild(input);
           console.log(`Added field ${key} with value ${pin[key]}`);
         }
+        
+        // Explicitly ensure city, state, country are included (in case they're not in pin object)
+        const requiredFields = ['city', 'state', 'country'];
+        requiredFields.forEach(field => {
+          if (!pin.hasOwnProperty(field)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = field;
+            input.value = document.getElementById(field)?.value || "";
+            form.appendChild(input);
+            console.log(`Added missing field ${field} with value ${input.value}`);
+          }
+        });
         
         // Add the form to the document
         document.body.appendChild(form);
