@@ -479,47 +479,58 @@
 
     async function geocodeLatLng(lat, lng) {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`;
-      const response = await fetch(url);
-      const geo = await response.json();
-      let city = "";
-      let state = "";
-      let country = "";
-      
-      if (geo.status === "OK" && geo.results.length > 0) {
-        const components = geo.results[0].address_components;
+      try {
+        const response = await fetch(url);
+        const geo = await response.json();
+        let city = "";
+        let state = "";
+        let country = "";
         
-        // More detailed component extraction
-        components.forEach(function(component) {
-          if (component.types.includes("locality")) {
-            city = component.long_name;
-          }
-          if (component.types.includes("administrative_area_level_1")) {
-            state = component.long_name;
-          }
-          if (component.types.includes("country")) {
-            country = component.long_name;
-          }
-        });
-        
-        // If we didn't get components in the first result, try other results
-        if (!state || !country) {
-          for (let i = 1; i < Math.min(geo.results.length, 5); i++) {
-            const altComponents = geo.results[i].address_components;
-            altComponents.forEach(function(component) {
-              if (!state && component.types.includes("administrative_area_level_1")) {
-                state = component.long_name;
-              }
-              if (!country && component.types.includes("country")) {
-                country = component.long_name;
-              }
-            });
-            if (state && country) break;
+        if (geo.status === "OK" && geo.results.length > 0) {
+          // Log the full geocoding response for debugging
+          console.log("Geocoding response:", geo);
+          
+          const components = geo.results[0].address_components;
+          
+          // More detailed component extraction
+          components.forEach(function(component) {
+            if (component.types.includes("locality")) {
+              city = component.long_name;
+            }
+            if (component.types.includes("administrative_area_level_1")) {
+              state = component.long_name;
+            }
+            if (component.types.includes("country")) {
+              country = component.long_name;
+            }
+          });
+          
+          // If we didn't get components in the first result, try other results
+          if (!city || !state || !country) {
+            for (let i = 1; i < Math.min(geo.results.length, 5); i++) {
+              const altComponents = geo.results[i].address_components;
+              altComponents.forEach(function(component) {
+                if (!city && component.types.includes("locality")) {
+                  city = component.long_name;
+                }
+                if (!state && component.types.includes("administrative_area_level_1")) {
+                  state = component.long_name;
+                }
+                if (!country && component.types.includes("country")) {
+                  country = component.long_name;
+                }
+              });
+              if (city && state && country) break;
+            }
           }
         }
+        
+        console.log("Geocoded location:", { city, state, country });
+        return { city, state, country };
+      } catch (error) {
+        console.error("Error geocoding location:", error);
+        return { city: "", state: "", country: "" };
       }
-      
-      console.log("Geocoded location:", { city, state, country });
-      return { city, state, country };
     }
 
     async function handleFormSubmit(event) {
@@ -532,15 +543,20 @@
       const lat = parseFloat(document.getElementById("latitude").value);
       const lng = parseFloat(document.getElementById("longitude").value);
 
-      // Geocode to get city, state, country
-      const { city, state, country } = await geocodeLatLng(lat, lng);
+      // Geocode location to get city, state, country
+      const locationData = await geocodeLatLng(lat, lng);
       
-      // Update hidden form fields
-      document.getElementById("city").value = city;
-      document.getElementById("state").value = state;
-      document.getElementById("country").value = country;
-
-      console.log("Geocoded data:", { city, state, country });
+      // Update the hidden form fields
+      document.getElementById("city").value = locationData.city || "";
+      document.getElementById("state").value = locationData.state || "";
+      document.getElementById("country").value = locationData.country || "";
+      
+      // Log the values for debugging
+      console.log("Form location data:", {
+        city: document.getElementById("city").value,
+        state: document.getElementById("state").value,
+        country: document.getElementById("country").value
+      });
 
       // Create the pin object with ALL location data
       const pin = {
@@ -550,9 +566,9 @@
         name,
         description,
         month,
-        city, // explicitly include city
-        state, // explicitly include state
-        country // explicitly include country
+        city: locationData.city || "",
+        state: locationData.state || "",
+        country: locationData.country || ""
       };
 
       // Log the complete pin data
@@ -560,8 +576,19 @@
 
       // Add to map and save to sheet
       addPinToMap(pin);
-      await addPinToSheet(pin);
+      try {
+        await addPinToSheet(pin);
+        console.log("Pin successfully saved to sheet");
+        
+        // Force refresh of state and country counts after successful save
+        setTimeout(() => {
+          refreshStateAndCountryCounts();
+        }, 2000);
+      } catch (error) {
+        console.error("Error saving pin:", error);
+      }
 
+      // Reset and close form
       event.target.reset();
       document.getElementById("location-form-container").style.display = "none";
     }
