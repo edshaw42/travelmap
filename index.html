@@ -747,28 +747,45 @@
         const yearCounts = {};
         const monthCounts = {};
         const locations = new Set();
+        
+        // Track unique states and countries directly here
+        const uniqueStates = new Set();
+        const uniqueCountries = new Set();
+        
         rows.forEach(row => {
           const year = row[0];
           yearCounts[year] = (yearCounts[year] || 0) + 1;
+          
           if (row.length > 5) {
             const month = row[5];
             monthCounts[month] = (monthCounts[month] || 0) + 1;
           }
+          
           if (row[1] && row[2]) {
             const lat = parseFloat(row[1]);
             const lng = parseFloat(row[2]);
             locations.add(`${lat.toFixed(1)},${lng.toFixed(1)}`);
           }
+          
+          // Get state and country from pin data if available (columns 7 and 8)
+          if (row.length >= 9) {
+            const state = row[7];
+            const country = row[8];
+            
+            if (state && state.trim() !== "") {
+              uniqueStates.add(state.trim());
+            }
+            
+            if (country && country.trim() !== "") {
+              uniqueCountries.add(country.trim());
+            }
+          }
         });
-        // Fetch unique state/country counts from Sheet2
-        const summaryResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet2!A2:B2?key=${API_KEY}`);
-        const summaryData = await summaryResponse.json();
-        let statesVisited = 0;
-        let countriesVisited = 0;
-        if (summaryData.values && summaryData.values[0]) {
-          statesVisited = summaryData.values[0][0] || 0;
-          countriesVisited = summaryData.values[0][1] || 0;
-        }
+        
+        // Get the counts directly from our Sets
+        const statesVisited = uniqueStates.size;
+        const countriesVisited = uniqueCountries.size;
+        
         let statsHTML = `
           <div class="stat-card">
             <div class="stat-title">Total Trips</div>
