@@ -528,6 +528,9 @@
       document.getElementById("state").value = state;
       document.getElementById("country").value = country;
 
+      console.log("Geocoded data:", { city, state, country });
+
+      // Include all fields in the pin data
       const pin = { year, lat, lng, name, description, month, city, state, country };
 
       addPinToMap(pin);
@@ -677,26 +680,6 @@
       document.getElementById("location-form-container").style.display = "none";
       // Reset form values when closing
       resetForm();
-    }
-
-    async function handleFormSubmit(event) {
-      event.preventDefault();
-
-      const name = document.getElementById("name").value;
-      const month = document.getElementById("month").value;
-      const description = document.getElementById("description").value;
-      const year = document.getElementById("year").value;
-      const lat = parseFloat(document.getElementById("latitude").value);
-      const lng = parseFloat(document.getElementById("longitude").value);
-
-      const pin = { year, lat, lng, name, description, month };
-
-      addPinToMap(pin);
-      await addPinToSheet(pin);
-
-      //alert("Pin added successfully!");
-      event.target.reset();
-      document.getElementById("location-form-container").style.display = "none";
     }
 
     function setupMapControls() {
