@@ -604,16 +604,21 @@
       // Geocode location to get city, state, country
       const locationData = await geocodeLatLng(lat, lng);
       
+      // Store the location data directly in variables
+      const city = locationData.city || "";
+      const state = locationData.state || "";
+      const country = locationData.country || "";
+      
       // Update the hidden form fields
-      document.getElementById("city").value = locationData.city || "";
-      document.getElementById("state").value = locationData.state || "";
-      document.getElementById("country").value = locationData.country || "";
+      document.getElementById("city").value = city;
+      document.getElementById("state").value = state;
+      document.getElementById("country").value = country;
       
       // Log the values for debugging
       console.log("Form location data:", {
-        city: document.getElementById("city").value,
-        state: document.getElementById("state").value,
-        country: document.getElementById("country").value
+        city: city,
+        state: state,
+        country: country
       });
 
       // Create the pin object with ALL location data
@@ -624,9 +629,9 @@
         name,
         description,
         month,
-        city: locationData.city || "",
-        state: locationData.state || "",
-        country: locationData.country || ""
+        city,
+        state,
+        country
       };
 
       // Log the complete pin data
