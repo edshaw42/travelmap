@@ -534,15 +534,31 @@
 
       // Geocode to get city, state, country
       const { city, state, country } = await geocodeLatLng(lat, lng);
+      
+      // Update hidden form fields
       document.getElementById("city").value = city;
       document.getElementById("state").value = state;
       document.getElementById("country").value = country;
 
       console.log("Geocoded data:", { city, state, country });
 
-      // Include all fields in the pin data
-      const pin = { year, lat, lng, name, description, month, city, state, country };
+      // Create the pin object with ALL location data
+      const pin = {
+        year,
+        lat,
+        lng,
+        name,
+        description,
+        month,
+        city, // explicitly include city
+        state, // explicitly include state
+        country // explicitly include country
+      };
 
+      // Log the complete pin data
+      console.log("Complete pin data to be saved:", pin);
+
+      // Add to map and save to sheet
       addPinToMap(pin);
       await addPinToSheet(pin);
 
