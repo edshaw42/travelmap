@@ -443,31 +443,15 @@
           }
         }
         
-        // Add special flag for updating unique state/country counts
-        const updateCountsInput = document.createElement('input');
-        updateCountsInput.type = 'hidden';
-        updateCountsInput.name = 'updateUniqueCounts';
-        updateCountsInput.value = 'true';
-        form.appendChild(updateCountsInput);
-        
         // Add the form to the document
         document.body.appendChild(form);
         
         console.log("Submitting form to Google Apps Script");
         
-        // Set a timeout to check Google Sheets after submission
+        // Set a timeout to refresh the stats after submission
         setTimeout(() => {
-          fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`)
-            .then(response => response.json())
-            .then(data => {
-              console.log("Fetched sheet data to verify pin was added:", data);
-              // Check the latest row
-              if (data.values && data.values.length > 0) {
-                const lastRow = data.values[data.values.length - 1];
-                console.log("Latest row in sheet:", lastRow);
-              }
-            })
-            .catch(err => console.error("Error verifying pin addition:", err));
+          // Force a refresh of country and state counts
+          refreshStateAndCountryCounts();
         }, 3000); // Check after 3 seconds
         
         // Handle the iframe load event
@@ -500,8 +484,11 @@
       let city = "";
       let state = "";
       let country = "";
+      
       if (geo.status === "OK" && geo.results.length > 0) {
         const components = geo.results[0].address_components;
+        
+        // More detailed component extraction
         components.forEach(function(component) {
           if (component.types.includes("locality")) {
             city = component.long_name;
@@ -513,7 +500,25 @@
             country = component.long_name;
           }
         });
+        
+        // If we didn't get components in the first result, try other results
+        if (!state || !country) {
+          for (let i = 1; i < Math.min(geo.results.length, 5); i++) {
+            const altComponents = geo.results[i].address_components;
+            altComponents.forEach(function(component) {
+              if (!state && component.types.includes("administrative_area_level_1")) {
+                state = component.long_name;
+              }
+              if (!country && component.types.includes("country")) {
+                country = component.long_name;
+              }
+            });
+            if (state && country) break;
+          }
+        }
       }
+      
+      console.log("Geocoded location:", { city, state, country });
       return { city, state, country };
     }
 
@@ -819,6 +824,62 @@
       } catch (error) {
         console.error("Error generating travel stats:", error);
         statsContent.innerHTML = '<p>Error loading stats. Please try again later.</p>';
+      }
+    }
+
+    async function refreshStateAndCountryCounts() {
+      console.log("Refreshing state and country counts...");
+      try {
+        // Fetch all pins data to count unique states and countries
+        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`);
+        const data = await response.json();
+        
+        if (!data.values || data.values.length <= 1) {
+          console.log("No pin data found");
+          return;
+        }
+        
+        // Skip header row if present
+        const rows = data.values.length > 1 ? data.values.slice(1) : data.values;
+        
+        // Track unique states and countries
+        const uniqueStates = new Set();
+        const uniqueCountries = new Set();
+        
+        // Process each pin to extract state and country
+        rows.forEach(row => {
+          // Check if we have state and country data (from columns 7 and 8)
+          if (row.length >= 9) {
+            const state = row[7];
+            const country = row[8];
+            
+            if (state && state.trim() !== "") {
+              uniqueStates.add(state.trim());
+            }
+            
+            if (country && country.trim() !== "") {
+              uniqueCountries.add(country.trim());
+            }
+          }
+        });
+        
+        console.log(`Found ${uniqueStates.size} unique states and ${uniqueCountries.size} unique countries`);
+        console.log("States:", Array.from(uniqueStates));
+        console.log("Countries:", Array.from(uniqueCountries));
+        
+        // Update the stats in the UI immediately if stats panel is open
+        const statsPanel = document.getElementById('stats-panel');
+        if (statsPanel.classList.contains('open')) {
+          generateTravelStats();
+        }
+        
+        return {
+          stateCount: uniqueStates.size,
+          countryCount: uniqueCountries.size
+        };
+      } catch (error) {
+        console.error("Error refreshing state and country counts:", error);
+        return { stateCount: 0, countryCount: 0 };
       }
     }
 
