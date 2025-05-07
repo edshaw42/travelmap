@@ -871,8 +871,9 @@
           const year = row[0];
           yearCounts[year] = (yearCounts[year] || 0) + 1;
           
-          if (row.length > 5) {
-            const month = row[5];
+          // Fix: Get month from column G (index 6) instead of using wrong column
+          const month = row[6]; // Month is in column G (index 6)
+          if (month) {
             monthCounts[month] = (monthCounts[month] || 0) + 1;
           }
           
