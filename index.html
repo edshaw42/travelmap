@@ -881,10 +881,11 @@
             locations.add(`${lat.toFixed(1)},${lng.toFixed(1)}`);
           }
           
-          // Get state and country from pin data if available (columns 7 and 8)
-          if (row.length >= 9) {
-            const state = row[7];
-            const country = row[8];
+          // Get state and country from pin data
+          // Sheet structure: Timestamp | Year | Month | Name | Description | Latitude | Longitude | City | State | Country
+          if (row.length >= 10) { // Make sure row has enough columns
+            const state = row[8]; // State is column 9 (index 8)
+            const country = row[9]; // Country is column 10 (index 9)
             
             if (state && state.trim() !== "") {
               uniqueStates.add(state.trim());
@@ -1115,7 +1116,7 @@
       </button>
       <button id="stats-button" class="map-button" title="View Travel Stats">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-          <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
+          <path d="M160 80c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48V80zm-64 96c26.5 0 48 21.5 48 48v208c0 26.5-21.5-48-48-48h-32c-26.5 0-48-21.5-48-48V224c0-26.5 21.5-48 48-48h32zM432 224c0 26.5-21.5 48-48 48h-32c-26.5 0-48-21.5-48-48v-32c0-26.5 21.5-48 48-48h32c26.5 0 48 21.5 48 48v32z"/>
         </svg>
       </button>
     </div>
