@@ -479,6 +479,8 @@
 
     async function geocodeLatLng(lat, lng) {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`;
+      console.log(`Geocoding request for: ${lat}, ${lng}`);
+      
       try {
         const response = await fetch(url);
         const geo = await response.json();
@@ -486,46 +488,90 @@
         let state = "";
         let country = "";
         
+        console.log("Geocoding API response status:", geo.status);
+        
         if (geo.status === "OK" && geo.results.length > 0) {
-          // Log the full geocoding response for debugging
-          console.log("Geocoding response:", geo);
-          
-          const components = geo.results[0].address_components;
-          
-          // More detailed component extraction
-          components.forEach(function(component) {
-            if (component.types.includes("locality")) {
-              city = component.long_name;
+          // Process all results to find the best address components
+          for (let i = 0; i < Math.min(geo.results.length, 5); i++) {
+            const result = geo.results[i];
+            const components = result.address_components;
+            
+            if (!components || !components.length) continue;
+            
+            // First pass: look for exact type matches
+            for (const component of components) {
+              if (!component.types) continue;
+              
+              // City/locality
+              if (component.types.includes("locality")) {
+                city = component.long_name;
+              }
+              // State/province (administrative_area_level_1)
+              else if (component.types.includes("administrative_area_level_1")) {
+                state = component.long_name;
+              }
+              // Country
+              else if (component.types.includes("country")) {
+                country = component.long_name;
+              }
             }
-            if (component.types.includes("administrative_area_level_1")) {
-              state = component.long_name;
-            }
-            if (component.types.includes("country")) {
-              country = component.long_name;
-            }
-          });
+            
+            // If we've found all three components, break out
+            if (city && state && country) break;
+          }
           
-          // If we didn't get components in the first result, try other results
+          // Second pass: If still missing data, look for alternate terms
           if (!city || !state || !country) {
-            for (let i = 1; i < Math.min(geo.results.length, 5); i++) {
-              const altComponents = geo.results[i].address_components;
-              altComponents.forEach(function(component) {
-                if (!city && component.types.includes("locality")) {
+            for (let i = 0; i < Math.min(geo.results.length, 5); i++) {
+              const result = geo.results[i];
+              const components = result.address_components;
+              
+              if (!components || !components.length) continue;
+              
+              for (const component of components) {
+                if (!component.types) continue;
+                
+                // Alternative city lookups
+                if (!city && (
+                    component.types.includes("postal_town") ||
+                    component.types.includes("administrative_area_level_3") ||
+                    component.types.includes("sublocality_level_1") ||
+                    component.types.includes("sublocality")
+                  )) {
                   city = component.long_name;
                 }
-                if (!state && component.types.includes("administrative_area_level_1")) {
+                
+                // Alternative state lookups
+                if (!state && component.types.includes("administrative_area_level_2")) {
                   state = component.long_name;
                 }
-                if (!country && component.types.includes("country")) {
-                  country = component.long_name;
-                }
-              });
-              if (city && state && country) break;
+              }
             }
           }
+          
+          // Final fallback: Use formatted address parts for any still-missing components
+          if (!city || !state || !country) {
+            const firstResult = geo.results[0];
+            if (firstResult && firstResult.formatted_address) {
+              const parts = firstResult.formatted_address.split(',').map(p => p.trim());
+              
+              // Simplistic approach: first part might be city, second-to-last might be state, last part might be country
+              if (parts.length >= 3) {
+                if (!city) city = parts[0];
+                if (!state) state = parts[parts.length - 2];
+                if (!country) country = parts[parts.length - 1];
+              }
+              else if (parts.length === 2) {
+                if (!city) city = parts[0];
+                if (!country) country = parts[1];
+              }
+            }
+          }
+        } else {
+          console.warn(`Geocoding API returned status: ${geo.status}`);
         }
         
-        console.log("Geocoded location:", { city, state, country });
+        console.log("Final geocoded location:", { city, state, country });
         return { city, state, country };
       } catch (error) {
         console.error("Error geocoding location:", error);
