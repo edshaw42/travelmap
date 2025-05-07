@@ -414,67 +414,79 @@
     }
 
     async function addPinToSheet(pin) {
-      return new Promise((resolve, reject) => {
-        // Log the pin data for debugging
-        console.log("Attempting to save pin data:", pin);
-        
-        // Create an invisible iframe to handle the form submission without page navigation
-        const iframe = document.createElement('iframe');
-        iframe.name = 'hidden-iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        // Create a form that will submit to the Google Apps Script
-        const form = document.createElement('form');
-        form.method = 'POST';
-        // Use a cache-busting parameter to avoid caching issues
-        form.action = 'https://script.google.com/macros/s/AKfycbwrwUkD5GBmYDcoU5a5Pauf9DfMVOJU0EqYHrZYF-yab1lK-iMlxr9wn4EuedyBUD4/exec?_=' + new Date().getTime();
-        form.target = 'hidden-iframe';
-        
-        // Add form fields for each property in the pin object
-        for (const key in pin) {
-          if (pin.hasOwnProperty(key)) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = pin[key] !== undefined && pin[key] !== null ? pin[key] : ""; // Ensure empty strings instead of undefined
-            form.appendChild(input);
-            console.log(`Added field ${key} with value ${input.value}`);
-          }
+      // Better logging to debug state and country data
+      console.log("=== PIN DATA DEBUG ===");
+      console.log("About to submit pin with following data:");
+      console.log("City:", pin.city || "MISSING");
+      console.log("State:", pin.state || "MISSING"); 
+      console.log("Country:", pin.country || "MISSING");
+      console.log("Full pin object:", pin);
+      console.log("====================");
+      
+      // Create a virtual form element
+      const form = document.createElement('form');
+      form.action = 'https://script.google.com/macros/s/AKfycbwrwUkD5GBmYDcoU5a5Pauf9DfMVOJU0EqYHrZYF-yab1lK-iMlxr9wn4EuedyBUD4/exec';
+      form.method = 'POST';
+      
+      // Add all pin data as form fields
+      const addField = (name, value) => {
+        const field = document.createElement('input');
+        field.type = 'hidden';
+        field.name = name;
+        field.value = value || '';
+        form.appendChild(field);
+        // Log each field we're adding
+        console.log(`Adding form field: ${name} = ${value || 'EMPTY'}`);
+      };
+      
+      // Add all fields from the pin object
+      addField('year', pin.year);
+      addField('lat', pin.lat);
+      addField('lng', pin.lng);
+      addField('name', pin.name);
+      addField('description', pin.description);
+      addField('month', pin.month);
+      addField('city', pin.city);
+      addField('state', pin.state);
+      addField('country', pin.country);
+      
+      // Create a hidden iframe to prevent opening a new tab
+      const iframe = document.createElement('iframe');
+      iframe.name = 'hidden-form-iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      form.target = 'hidden-form-iframe';
+      
+      // Listen for the iframe load event to detect form submission completion
+      iframe.addEventListener('load', function() {
+        console.log("Form submission completed (iframe loaded)");
+        try {
+          // Try to get response content from iframe (may fail due to CORS)
+          const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
+          console.log("Iframe response:", iframeContent.body.innerText);
+        } catch (e) {
+          console.log("Could not read iframe response due to CORS restrictions");
         }
-        
-        // Add the form to the document
-        document.body.appendChild(form);
-        
-        console.log("Submitting form to Google Apps Script");
-        
-        // Set a timeout to refresh the stats after submission
-        setTimeout(() => {
-          // Force a refresh of country and state counts
-          refreshStateAndCountryCounts();
-        }, 3000); // Check after 3 seconds
-        
-        // Handle the iframe load event
-        iframe.onload = function() {
-          console.log("Form submitted successfully");
-          
-          // Clean up
-          document.body.removeChild(form);
-          document.body.removeChild(iframe);
-          resolve(true);
-        };
-        
-        iframe.onerror = function(error) {
-          console.error("Error submitting form:", error);
-          // Clean up
-          document.body.removeChild(form);
-          document.body.removeChild(iframe);
-          reject(new Error("Failed to submit form"));
-        };
-        
-        // Submit the form
-        form.submit();
       });
+      
+      // Append the form to the document, submit it, and remove it
+      document.body.appendChild(form);
+      console.log("Submitting form to Google Apps Script...");
+      form.submit();
+      
+      // Remove the form and iframe after submission (with a delay)
+      setTimeout(() => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+        console.log("Form and iframe removed from DOM");
+      }, 5000); // Longer delay to ensure data is processed
+      
+      // Schedule a refresh of the stats after a short delay
+      setTimeout(() => {
+        refreshStateAndCountryCounts();
+      }, 5000); // Longer delay to ensure data is processed
+      
+      return true;
     }
 
     async function geocodeLatLng(lat, lng) {
