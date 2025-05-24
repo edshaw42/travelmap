@@ -276,6 +276,30 @@
       font-family: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
+
+    /* Add styling for the file input */
+    #location-form-container input[type="file"] {
+      padding: 0.5rem;
+      background-color: #fff;
+      cursor: pointer;
+    }
+    
+    /* Add a preview container for the image */
+    .image-preview {
+      margin-top: 0.5rem;
+      width: 100%;
+      max-height: 150px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .image-preview img {
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 8px;
+      display: none; /* Hidden initially */
+    }
     
     #location-form-container input:focus,
     #location-form-container select:focus,
@@ -457,6 +481,7 @@
       addField('city', pin.city);
       addField('state', pin.state);
       addField('country', pin.country);
+      addField('photoData', pin.photoData); // Add photo data field
       
       // Create a hidden iframe to prevent opening a new tab
       const iframe = document.createElement('iframe');
@@ -608,6 +633,17 @@
       const year = document.getElementById("year").value;
       const lat = parseFloat(document.getElementById("latitude").value);
       const lng = parseFloat(document.getElementById("longitude").value);
+      
+      // Process photo if one was uploaded
+      let photoData = "";
+      const photoInput = document.getElementById("photo");
+      if (photoInput.files && photoInput.files[0]) {
+        try {
+          photoData = await convertImageToBase64(photoInput.files[0]);
+        } catch (error) {
+          console.error("Error processing image:", error);
+        }
+      }
 
       // Geocode location to get city, state, country
       const locationData = await geocodeLatLng(lat, lng);
@@ -639,11 +675,12 @@
         month,
         city,
         state,
-        country
+        country,
+        photoData  // Add the photo data to the pin object
       };
 
       // Log the complete pin data
-      console.log("Complete pin data to be saved:", pin);
+      console.log("Complete pin data to be saved:", {...pin, photoData: photoData ? "Base64 data (truncated)" : "None" });
 
       // Add to map and save to sheet
       addPinToMap(pin);
@@ -963,6 +1000,28 @@
         statsHTML += `
             </div>
           </div>
+          <div class="stat-card">
+            <div class="stat-title">Pin Color Legend</div>
+            <div style="margin-top: 12px;">
+        `;
+        
+        // Add color legend for each year that has pins
+        sortedYears.forEach(year => {
+          const color = getColorByYear(year);
+          statsHTML += `
+            <div class="year-stat">
+              <span style="display: flex; align-items: center;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${color}; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.3); margin-right: 8px;"></span>
+                ${year}
+              </span>
+              <span class="year-count">${yearCounts[year]} pins</span>
+            </div>
+          `;
+        });
+        
+        statsHTML += `
+            </div>
+          </div>
         `;
         statsContent.innerHTML = statsHTML;
       } catch (error) {
@@ -1098,6 +1157,34 @@
       });
     }
 
+    // Function to preview the selected image
+    function previewImage(input) {
+      const preview = document.getElementById('photo-preview');
+      
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        preview.style.display = 'none';
+      }
+    }
+
+    // Function to convert image to base64
+    function convertImageToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
     window.initMap = initMap;
     window.onload = () => {
       fetchPins();
@@ -1190,6 +1277,15 @@
         <input type="text" id="longitude" readonly />
       </div>
       
+      <div>
+        <label for="photo">Photo (optional):</label>
+        <input type="file" id="photo" name="photo" accept="image/*" onchange="previewImage(this)"/>
+        <div class="image-preview">
+          <img id="photo-preview" alt="Preview" style="display: none; max-width: 100%; max-height: 150px; margin-top: 10px;"/>
+        </div>
+      </div>
+
+      <!-- Hidden fields for location data -->
       <input type="hidden" id="city" name="city" />
       <input type="hidden" id="state" name="state" />
       <input type="hidden" id="country" name="country" />
