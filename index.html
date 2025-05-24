@@ -974,9 +974,13 @@
         `;
         const sortedYears = Object.keys(yearCounts).sort((a, b) => b - a);
         sortedYears.forEach(year => {
+          const color = getColorByYear(year);
           statsHTML += `
             <div class="year-stat">
-              <span>${year}</span>
+              <span style="display: flex; align-items: center;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${color}; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.3); margin-right: 8px;"></span>
+                ${year}
+              </span>
               <span class="year-count">${yearCounts[year]} trips</span>
             </div>
           `;
@@ -997,28 +1001,6 @@
             </div>
           `;
         });
-        statsHTML += `
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-title">Pin Color Legend</div>
-            <div style="margin-top: 12px;">
-        `;
-        
-        // Add color legend for each year that has pins
-        sortedYears.forEach(year => {
-          const color = getColorByYear(year);
-          statsHTML += `
-            <div class="year-stat">
-              <span style="display: flex; align-items: center;">
-                <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${color}; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.3); margin-right: 8px;"></span>
-                ${year}
-              </span>
-              <span class="year-count">${yearCounts[year]} pins</span>
-            </div>
-          `;
-        });
-        
         statsHTML += `
             </div>
           </div>
