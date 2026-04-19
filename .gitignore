@@ -20,3 +20,15 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Claude workspace
+.claude/

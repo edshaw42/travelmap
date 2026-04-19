@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-deep: #080810;
+  --color-surface: #0f0f1a;
+  --color-raised: #171724;
+  --color-elevated: #1e1e2e;
+  --color-border: #252535;
+  --color-border-subtle: #1c1c2a;
+
+  --color-text: #e8e8f0;
+  --color-muted: #6a6a7c;
+  --color-faint: #3a3a4e;
+
+  --color-gold: #f0c040;
+  --color-gold-dim: #a07a20;
+  --color-blue: #4f9eff;
+  --color-blue-dim: #1a4a80;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0f0f1a;
+  color: #e8e8f0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Google Maps info window reset */
+.gm-style .gm-style-iw-c {
+  display: none !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #252535;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a4e;
+}
