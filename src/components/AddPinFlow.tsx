@@ -23,24 +23,15 @@ type Step = 'confirm' | 'details' | 'story'
 
 export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
   const [step, setStep] = useState<Step>('confirm')
-  const [form, setForm] = useState({
-    name: '',
-    month: '',
-    year: String(CURRENT_YEAR),
-    description: '',
-  })
+  const [form, setForm] = useState({ name: '', month: '', year: String(CURRENT_YEAR), description: '' })
   const [geo, setGeo] = useState<{ city: string; state: string; country: string } | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
   const { mutateAsync: addPin, isPending } = useAddPin()
 
   if (!location) return null
 
-  const latStr = location.lat >= 0
-    ? `${location.lat.toFixed(5)}°N`
-    : `${Math.abs(location.lat).toFixed(5)}°S`
-  const lngStr = location.lng >= 0
-    ? `${location.lng.toFixed(5)}°E`
-    : `${Math.abs(location.lng).toFixed(5)}°W`
+  const latStr = location.lat >= 0 ? `${location.lat.toFixed(5)}°N` : `${Math.abs(location.lat).toFixed(5)}°S`
+  const lngStr = location.lng >= 0 ? `${location.lng.toFixed(5)}°E` : `${Math.abs(location.lng).toFixed(5)}°W`
 
   async function confirmLocation() {
     setIsGeocoding(true)
@@ -52,19 +43,11 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
 
   async function handleSubmit() {
     if (!form.name || !form.month) return
-
     const pin: NewPin = {
-      name: form.name,
-      month: form.month,
-      year: form.year,
-      description: form.description,
-      lat: location!.lat,
-      lng: location!.lng,
-      city: geo?.city ?? '',
-      state: geo?.state ?? '',
-      country: geo?.country ?? '',
+      name: form.name, month: form.month, year: form.year, description: form.description,
+      lat: location!.lat, lng: location!.lng,
+      city: geo?.city ?? '', state: geo?.state ?? '', country: geo?.country ?? '',
     }
-
     await addPin(pin)
     onSuccess({ ...pin, id: `optimistic-${Date.now()}` })
     onCancel()
@@ -75,7 +58,6 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
 
   return (
     <>
-      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -84,21 +66,20 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
         className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
       />
 
-      {/* Modal */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: 'spring', stiffness: 300, damping: 28 }}
         className="fixed inset-x-4 bottom-4 sm:inset-auto sm:left-1/2 sm:-translate-x-1/2
-          sm:top-1/2 sm:-translate-y-1/2 z-50
-          w-auto sm:w-[480px] bg-[#13131a] border border-[#252535] rounded-2xl
-          shadow-[0_32px_80px_rgba(0,0,0,0.7)] overflow-hidden"
+          sm:top-1/2 sm:-translate-y-1/2 z-50 w-auto sm:w-[480px] rounded-2xl shadow-2xl overflow-hidden"
+        style={{ backgroundColor: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
       >
-        {/* Step progress bar */}
-        <div className="h-[2px] bg-[#252535]">
+        {/* Progress bar */}
+        <div className="h-[2px]" style={{ backgroundColor: 'var(--c-border)' }}>
           <motion.div
-            className="h-full bg-[#f0c040]"
+            className="h-full"
+            style={{ backgroundColor: 'var(--c-accent)' }}
             initial={{ width: 0 }}
             animate={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
             transition={{ duration: 0.4 }}
@@ -106,12 +87,13 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#1e1e2e]">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3"
+          style={{ borderBottom: '1px solid var(--c-border-sub)' }}>
           <div>
-            <p className="text-[#6a6a7c] text-[10px] font-medium tracking-widest uppercase">
+            <p className="text-[10px] font-medium tracking-widest uppercase" style={{ color: 'var(--c-text-3)' }}>
               New Entry · {stepIndex + 1} of {steps.length}
             </p>
-            <h2 className="text-[#e8e8f0] text-base font-semibold mt-0.5">
+            <h2 className="text-base font-semibold mt-0.5" style={{ color: 'var(--c-text-1)' }}>
               {step === 'confirm' && 'Mark your location'}
               {step === 'details' && 'When & where?'}
               {step === 'story' && 'Tell the story'}
@@ -119,9 +101,8 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
           </div>
           <button
             onClick={onCancel}
-            className="flex items-center justify-center w-8 h-8 rounded-lg
-              text-[#6a6a7c] hover:text-[#e8e8f0] hover:bg-[#1e1e2e]
-              transition-colors cursor-pointer"
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer"
+            style={{ color: 'var(--c-text-3)' }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -133,17 +114,17 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
             {step === 'confirm' && (
               <StepPane key="confirm">
                 <div className="flex flex-col items-center gap-4 py-2 text-center">
-                  <div className="w-14 h-14 rounded-full bg-[#f0c040]/10 border border-[#f0c040]/30
-                    flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-[#f0c040]" />
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--c-accent-bg)', border: '1px solid var(--c-accent-bdr)' }}>
+                    <MapPin className="w-6 h-6" style={{ color: 'var(--c-accent)' }} />
                   </div>
                   <div>
-                    <p className="text-[#e8e8f0] text-sm font-medium">You were here</p>
-                    <p className="text-[#6a6a7c] text-xs font-mono mt-1">
+                    <p className="text-sm font-medium" style={{ color: 'var(--c-text-1)' }}>You were here</p>
+                    <p className="text-xs font-mono mt-1" style={{ color: 'var(--c-text-3)' }}>
                       {latStr} · {lngStr}
                     </p>
                   </div>
-                  <p className="text-[#6a6a7c] text-xs max-w-xs">
+                  <p className="text-xs max-w-xs" style={{ color: 'var(--c-text-3)' }}>
                     We'll look up the city, state, and country automatically.
                     Is this the right spot?
                   </p>
@@ -155,9 +136,10 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
               <StepPane key="details">
                 <div className="flex flex-col gap-3">
                   {geo && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1e1e2e] border border-[#252535]">
-                      <MapPin className="w-3.5 h-3.5 text-[#f0c040] flex-shrink-0" />
-                      <span className="text-[#9a9aac] text-xs truncate">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                      style={{ backgroundColor: 'var(--c-deep)', border: '1px solid var(--c-border)' }}>
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--c-accent)' }} />
+                      <span className="text-xs truncate" style={{ color: 'var(--c-text-2)' }}>
                         {[geo.city, geo.state, geo.country].filter(Boolean).join(', ')}
                       </span>
                     </div>
@@ -168,11 +150,14 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
                       placeholder="e.g. Grand Canyon, Paris, Lake Tahoe…"
                       value={form.name}
                       onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full px-3 py-2.5 rounded-lg bg-[#1e1e2e] border border-[#252535]
-                        text-[#e8e8f0] text-sm placeholder:text-[#3a3a4e]
-                        focus:outline-none focus:border-[#f0c040]/50 focus:bg-[#1e1e2e]
-                        transition-colors"
                       autoFocus
+                      className="w-full px-3 py-2.5 rounded-lg text-sm placeholder:opacity-40
+                        focus:outline-none transition-colors"
+                      style={{
+                        backgroundColor: 'var(--c-deep)',
+                        border: '1px solid var(--c-border)',
+                        color: 'var(--c-text-1)',
+                      }}
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
@@ -180,27 +165,29 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
                       <select
                         value={form.month}
                         onChange={(e) => setForm((f) => ({ ...f, month: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg bg-[#1e1e2e] border border-[#252535]
-                          text-[#e8e8f0] text-sm focus:outline-none focus:border-[#f0c040]/50
-                          transition-colors cursor-pointer"
+                        className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--c-deep)',
+                          border: '1px solid var(--c-border)',
+                          color: form.month ? 'var(--c-text-1)' : 'var(--c-text-4)',
+                        }}
                       >
                         <option value="" disabled>Month</option>
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
+                        {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
                       </select>
                     </Field>
                     <Field label="Year">
                       <select
                         value={form.year}
                         onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg bg-[#1e1e2e] border border-[#252535]
-                          text-[#e8e8f0] text-sm focus:outline-none focus:border-[#f0c040]/50
-                          transition-colors cursor-pointer"
+                        className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--c-deep)',
+                          border: '1px solid var(--c-border)',
+                          color: 'var(--c-text-1)',
+                        }}
                       >
-                        {YEARS.map((y) => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
+                        {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </Field>
                   </div>
@@ -211,11 +198,10 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
             {step === 'story' && (
               <StepPane key="story">
                 <div className="flex flex-col gap-3">
-                  <div className="px-3 py-2 rounded-lg bg-[#1e1e2e] border border-[#252535]">
-                    <p className="text-[#e8e8f0] text-sm font-medium">{form.name}</p>
-                    <p className="text-[#6a6a7c] text-xs mt-0.5">
-                      {form.month} {form.year}
-                    </p>
+                  <div className="px-3 py-2 rounded-lg"
+                    style={{ backgroundColor: 'var(--c-deep)', border: '1px solid var(--c-border)' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--c-text-1)' }}>{form.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-3)' }}>{form.month} {form.year}</p>
                   </div>
                   <Field label="Journal entry">
                     <textarea
@@ -223,14 +209,17 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
                       value={form.description}
                       onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                       rows={5}
-                      className="w-full px-3 py-2.5 rounded-lg bg-[#1e1e2e] border border-[#252535]
-                        text-[#e8e8f0] text-sm placeholder:text-[#3a3a4e] leading-relaxed
-                        focus:outline-none focus:border-[#f0c040]/50
-                        transition-colors resize-none italic"
+                      className="w-full px-3 py-2.5 rounded-lg text-sm leading-relaxed
+                        focus:outline-none resize-none italic"
+                      style={{
+                        backgroundColor: 'var(--c-deep)',
+                        border: '1px solid var(--c-border)',
+                        color: 'var(--c-text-1)',
+                      }}
                     />
                   </Field>
-                  <p className="text-[#3a3a4e] text-[11px]">
-                    This is optional — you can always leave it blank.
+                  <p className="text-[11px]" style={{ color: 'var(--c-text-4)' }}>
+                    Optional — you can always leave it blank.
                   </p>
                 </div>
               </StepPane>
@@ -238,7 +227,7 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
           </AnimatePresence>
         </div>
 
-        {/* Footer navigation */}
+        {/* Footer nav */}
         <div className="flex items-center justify-between px-5 pb-5">
           <button
             onClick={() => {
@@ -246,9 +235,8 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
               else if (step === 'details') setStep('confirm')
               else setStep('details')
             }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg
-              text-[#6a6a7c] hover:text-[#e8e8f0] text-sm
-              transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer"
+            style={{ color: 'var(--c-text-3)' }}
           >
             <ArrowLeft className="w-4 h-4" />
             {step === 'confirm' ? 'Cancel' : 'Back'}
@@ -256,23 +244,17 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
 
           {step === 'confirm' && (
             <ActionButton onClick={confirmLocation} loading={isGeocoding}>
-              Confirm
-              <ArrowRight className="w-4 h-4" />
+              Confirm <ArrowRight className="w-4 h-4" />
             </ActionButton>
           )}
           {step === 'details' && (
-            <ActionButton
-              onClick={() => setStep('story')}
-              disabled={!form.name || !form.month}
-            >
-              Continue
-              <ArrowRight className="w-4 h-4" />
+            <ActionButton onClick={() => setStep('story')} disabled={!form.name || !form.month}>
+              Continue <ArrowRight className="w-4 h-4" />
             </ActionButton>
           )}
           {step === 'story' && (
             <ActionButton onClick={handleSubmit} loading={isPending}>
-              <Check className="w-4 h-4" />
-              Save entry
+              <Check className="w-4 h-4" /> Save entry
             </ActionButton>
           )}
         </div>
@@ -297,7 +279,7 @@ function StepPane({ children }: { children: React.ReactNode }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[#6a6a7c] text-[11px] font-medium tracking-wider uppercase">
+      <label className="text-[11px] font-medium tracking-wider uppercase" style={{ color: 'var(--c-text-3)' }}>
         {label}
       </label>
       {children}
@@ -318,9 +300,8 @@ function ActionButton({ onClick, disabled, loading, children }: ActionButtonProp
       onClick={onClick}
       disabled={disabled || loading}
       className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-        bg-[#f0c040] text-[#0f0f1a] hover:bg-[#f5d060]
-        disabled:opacity-40 disabled:cursor-not-allowed
-        transition-all duration-150 cursor-pointer"
+        disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+      style={{ backgroundColor: 'var(--c-accent)', color: '#0f0f1a' }}
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : children}
     </button>

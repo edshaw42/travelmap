@@ -23,6 +23,21 @@ export const COL = {
   PHOTO_URL: 10,
 } as const
 
+export const LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5fa' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#e8e8f0' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#d1d5e0' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#b8d4f0' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#d1d5db' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#374151' }] },
+]
+
 export const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1e1e2e' }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },

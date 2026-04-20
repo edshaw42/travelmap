@@ -17,34 +17,40 @@ export function YearFilter({ years, activeYears, onToggleYear }: YearFilterProps
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 flex-wrap justify-center px-4"
+      className="absolute top-3 left-0 right-0 z-20 px-3 sm:px-4
+        flex items-center justify-start sm:justify-center"
     >
-      {years.map((year) => {
-        const color = getYearColor(year)
-        const isActive = allActive || activeYears.has(year)
+      {/* Horizontally scrollable on mobile, wraps on desktop */}
+      <div className="flex gap-2 overflow-x-auto pb-1 flex-nowrap sm:flex-wrap sm:justify-center
+        scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none]
+        [&::-webkit-scrollbar]:hidden">
+        {years.map((year) => {
+          const color = getYearColor(year)
+          const isActive = allActive || activeYears.has(year)
 
-        return (
-          <motion.button
-            key={year}
-            onClick={() => onToggleYear(year)}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.94 }}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-              backdrop-blur-md border transition-all duration-200 cursor-pointer"
-            style={{
-              backgroundColor: isActive ? `${color}22` : 'rgba(15,15,26,0.7)',
-              borderColor: isActive ? `${color}55` : '#252535',
-              color: isActive ? color : '#6a6a7c',
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full transition-opacity duration-200"
-              style={{ backgroundColor: color, opacity: isActive ? 1 : 0.3 }}
-            />
-            {year}
-          </motion.button>
-        )
-      })}
+          return (
+            <motion.button
+              key={year}
+              onClick={() => onToggleYear(year)}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.94 }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                backdrop-blur-md border transition-all duration-200 cursor-pointer flex-shrink-0"
+              style={{
+                backgroundColor: isActive ? `${color}22` : 'rgba(15,15,26,0.65)',
+                borderColor: isActive ? `${color}55` : 'rgba(37,37,53,0.8)',
+                color: isActive ? color : '#6a6a7c',
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full transition-opacity duration-200 flex-shrink-0"
+                style={{ backgroundColor: color, opacity: isActive ? 1 : 0.3 }}
+              />
+              {year}
+            </motion.button>
+          )
+        })}
+      </div>
     </motion.div>
   )
 }
