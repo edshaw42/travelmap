@@ -37,49 +37,22 @@ export async function fetchPins(): Promise<Pin[]> {
 }
 
 export async function submitPin(pin: NewPin): Promise<void> {
-  return new Promise((resolve) => {
-    const iframe = document.createElement('iframe')
-    iframe.name = 'pin-submit-frame'
-    iframe.style.display = 'none'
-    document.body.appendChild(iframe)
+  const body = new URLSearchParams({
+    year: pin.year,
+    month: pin.month,
+    name: pin.name,
+    description: pin.description,
+    lat: String(pin.lat),
+    lng: String(pin.lng),
+    city: pin.city,
+    state: pin.state,
+    country: pin.country,
+  })
 
-    const form = document.createElement('form')
-    form.action = APPS_SCRIPT_URL
-    form.method = 'POST'
-    form.target = 'pin-submit-frame'
-
-    const fields: Record<string, string> = {
-      year: pin.year,
-      month: pin.month,
-      name: pin.name,
-      description: pin.description,
-      lat: String(pin.lat),
-      lng: String(pin.lng),
-      city: pin.city,
-      state: pin.state,
-      country: pin.country,
-    }
-
-    for (const [name, value] of Object.entries(fields)) {
-      const input = document.createElement('input')
-      input.type = 'hidden'
-      input.name = name
-      input.value = value
-      form.appendChild(input)
-    }
-
-    iframe.addEventListener('load', () => {
-      setTimeout(() => {
-        document.body.removeChild(form)
-        document.body.removeChild(iframe)
-        resolve()
-      }, 500)
-    })
-
-    document.body.appendChild(form)
-    form.submit()
-
-    // Safety fallback resolve after 8s
-    setTimeout(resolve, 8000)
+  // no-cors sends a cross-origin simple request; Apps Script receives it in e.parameter
+  await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body,
   })
 }
