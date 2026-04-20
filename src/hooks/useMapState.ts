@@ -7,9 +7,11 @@ export function useMapState() {
   const [pendingLocation, setPendingLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [activeYears, setActiveYears] = useState<Set<string>>(new Set())
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false)
+  const [isListPanelOpen, setIsListPanelOpen] = useState(false)
 
   const selectPin = useCallback((pin: Pin | null) => {
     setSelectedPin(pin)
+    if (pin) setIsListPanelOpen(false) // list closes when journal card opens
   }, [])
 
   const toggleAddMode = useCallback(() => {
@@ -39,6 +41,13 @@ export function useMapState() {
   const toggleStatsPanel = useCallback(() => {
     setIsStatsPanelOpen((prev) => !prev)
     setSelectedPin(null)
+    setIsListPanelOpen(false)
+  }, [])
+
+  const toggleListPanel = useCallback(() => {
+    setIsListPanelOpen((prev) => !prev)
+    setSelectedPin(null)
+    setIsStatsPanelOpen(false)
   }, [])
 
   return {
@@ -53,5 +62,7 @@ export function useMapState() {
     toggleYear,
     isStatsPanelOpen,
     toggleStatsPanel,
+    isListPanelOpen,
+    toggleListPanel,
   }
 }
