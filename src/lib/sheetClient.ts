@@ -36,23 +36,48 @@ export async function fetchPins(): Promise<Pin[]> {
     .filter((pin): pin is Pin => pin !== null)
 }
 
-export async function submitPin(pin: NewPin): Promise<void> {
-  const body = new URLSearchParams({
-    year: pin.year,
-    month: pin.month,
-    name: pin.name,
-    description: pin.description,
-    lat: String(pin.lat),
-    lng: String(pin.lng),
-    city: pin.city,
-    state: pin.state,
-    country: pin.country,
-  })
+export function submitPin(pin: NewPin): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const iframeName = `pin-submit-${Date.now()}`
+    const iframe = document.createElement('iframe')
+    iframe.name = iframeName
+    iframe.style.display = 'none'
+    document.body.appendChild(iframe)
 
-  // no-cors sends a cross-origin simple request; Apps Script receives it in e.parameter
-  await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    body,
+    const form = document.createElement('form')
+    form.action = APPS_SCRIPT_URL
+    form.method = 'POST'
+    form.target = iframeName
+
+    const fields: Record<string, string> = {
+      year: pin.year,
+      month: pin.month,
+      name: pin.name,
+      description: pin.description,
+      lat: String(pin.lat),
+      lng: String(pin.lng),
+      city: pin.city,
+      state: pin.state,
+      country: pin.country,
+    }
+
+    for (const [name, value] of Object.entries(fields)) {
+      const input = document.createElement('input')
+      input.type = 'hidden'
+      input.name = name
+      input.value = value
+      form.appendChild(input)
+    }
+
+    document.body.appendChild(form)
+    form.submit()
+
+    // Resolve immediately so the UI closes; clean up the DOM elements
+    // after giving Apps Script enough time to finish writing the row.
+    resolve()
+    setTimeout(() => {
+      try { document.body.removeChild(form) } catch { /* already removed */ }
+      try { document.body.removeChild(iframe) } catch { /* already removed */ }
+    }, 6000)
   })
 }
