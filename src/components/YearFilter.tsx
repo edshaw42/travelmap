@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { getYearColor } from '../lib/colors'
+import { getYearColor, getYearColorForUI } from '../lib/colors'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface YearFilterProps {
   years: string[]
@@ -8,6 +9,7 @@ interface YearFilterProps {
 }
 
 export function YearFilter({ years, activeYears, onToggleYear }: YearFilterProps) {
+  const { isDark } = useTheme()
   if (years.length === 0) return null
 
   const allActive = activeYears.size === 0
@@ -18,14 +20,13 @@ export function YearFilter({ years, activeYears, onToggleYear }: YearFilterProps
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
       className="absolute top-3 left-0 right-0 z-20 px-3 sm:px-4
-        flex items-center justify-start sm:justify-center"
+        flex items-center justify-start sm:justify-center pointer-events-none"
     >
-      {/* Horizontally scrollable on mobile, wraps on desktop */}
       <div className="flex gap-2 overflow-x-auto pb-1 flex-nowrap sm:flex-wrap sm:justify-center
-        scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none]
-        [&::-webkit-scrollbar]:hidden">
+        pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {years.map((year) => {
-          const color = getYearColor(year)
+          const mapColor = getYearColor(year)       // dot — always vivid
+          const uiColor = getYearColorForUI(year, isDark) // label — contrast-safe
           const isActive = allActive || activeYears.has(year)
 
           return (
@@ -37,14 +38,18 @@ export function YearFilter({ years, activeYears, onToggleYear }: YearFilterProps
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
                 backdrop-blur-md border transition-all duration-200 cursor-pointer flex-shrink-0"
               style={{
-                backgroundColor: isActive ? `${color}22` : 'rgba(15,15,26,0.65)',
-                borderColor: isActive ? `${color}55` : 'rgba(37,37,53,0.8)',
-                color: isActive ? color : '#6a6a7c',
+                backgroundColor: isActive
+                  ? `${mapColor}22`
+                  : isDark ? 'rgba(15,15,26,0.7)' : 'rgba(255,255,255,0.85)',
+                borderColor: isActive
+                  ? `${mapColor}55`
+                  : isDark ? 'rgba(37,37,53,0.9)' : 'rgba(200,200,210,0.9)',
+                color: isActive ? uiColor : 'var(--c-text-3)',
               }}
             >
               <span
-                className="w-1.5 h-1.5 rounded-full transition-opacity duration-200 flex-shrink-0"
-                style={{ backgroundColor: color, opacity: isActive ? 1 : 0.3 }}
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ backgroundColor: mapColor, opacity: isActive ? 1 : 0.4 }}
               />
               {year}
             </motion.button>

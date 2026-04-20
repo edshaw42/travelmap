@@ -1,25 +1,34 @@
-import { BarChart2, MapPin, Moon, Plus, Sun, X } from 'lucide-react'
+import { BarChart2, BookOpen, MapPin, Moon, Plus, Sun, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface HeaderProps {
   isAddMode: boolean
   isStatsPanelOpen: boolean
+  isListPanelOpen: boolean
   onToggleAddMode: () => void
   onToggleStats: () => void
+  onToggleList: () => void
 }
 
-export function Header({ isAddMode, isStatsPanelOpen, onToggleAddMode, onToggleStats }: HeaderProps) {
+export function Header({
+  isAddMode,
+  isStatsPanelOpen,
+  isListPanelOpen,
+  onToggleAddMode,
+  onToggleStats,
+  onToggleList,
+}: HeaderProps) {
   const { isDark, toggle } = useTheme()
 
   return (
     <header
       className="relative z-30 flex items-center justify-between px-4 sm:px-5 py-3"
       style={{
-        backgroundColor: isDark ? 'rgba(15,15,26,0.9)' : 'rgba(255,255,255,0.9)',
+        backgroundColor: isDark ? 'rgba(15,15,26,0.92)' : 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: `1px solid var(--c-border)`,
+        borderBottom: '1px solid var(--c-border)',
       }}
     >
       {/* Logo + title */}
@@ -39,7 +48,7 @@ export function Header({ isAddMode, isStatsPanelOpen, onToggleAddMode, onToggleS
 
       {/* Controls */}
       <div className="flex items-center gap-2">
-        {/* Add-mode indicator — desktop only */}
+        {/* Add-mode indicator (desktop only) */}
         {isAddMode && (
           <motion.div
             initial={{ opacity: 0, x: 10 }}
@@ -55,8 +64,17 @@ export function Header({ isAddMode, isStatsPanelOpen, onToggleAddMode, onToggleS
           </motion.div>
         )}
 
-        {/* Dark / light toggle */}
         <ThemeToggle isDark={isDark} onToggle={toggle} />
+
+        <IconButton
+          onClick={onToggleList}
+          active={isListPanelOpen}
+          label="All trips"
+          activeColor="var(--c-accent)"
+          activeBg="var(--c-accent-bg)"
+        >
+          <BookOpen className="w-4 h-4" />
+        </IconButton>
 
         <IconButton
           onClick={onToggleStats}
@@ -82,20 +100,16 @@ export function Header({ isAddMode, isStatsPanelOpen, onToggleAddMode, onToggleS
   )
 }
 
-/* Sliding pill toggle */
 function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }) {
   return (
     <motion.button
       onClick={onToggle}
       aria-label="Toggle theme"
       className="relative flex items-center w-14 h-7 rounded-full p-0.5 cursor-pointer flex-shrink-0"
-      style={{ backgroundColor: isDark ? 'var(--c-deep)' : 'var(--c-deep)', border: '1px solid var(--c-border)' }}
+      style={{ backgroundColor: 'var(--c-deep)', border: '1px solid var(--c-border)' }}
     >
-      {/* Track icons */}
       <Moon className="absolute left-1.5 w-3 h-3" style={{ color: isDark ? 'var(--c-accent)' : 'var(--c-text-4)' }} />
       <Sun className="absolute right-1.5 w-3 h-3" style={{ color: !isDark ? 'var(--c-accent)' : 'var(--c-text-4)' }} />
-
-      {/* Sliding knob */}
       <motion.span
         animate={{ x: isDark ? 0 : 28 }}
         transition={{ type: 'spring', stiffness: 400, damping: 28 }}
@@ -122,7 +136,8 @@ function IconButton({ onClick, active, label, activeColor, activeBg, children }:
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       aria-label={label}
-      className="flex items-center justify-center w-9 h-9 rounded-xl border transition-all duration-200 cursor-pointer"
+      className="flex items-center justify-center w-9 h-9 rounded-xl border
+        transition-all duration-200 cursor-pointer"
       style={{
         backgroundColor: active ? activeBg : 'var(--c-raised)',
         borderColor: active ? activeColor : 'var(--c-border)',

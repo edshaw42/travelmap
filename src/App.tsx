@@ -10,6 +10,7 @@ import { MapView } from './components/MapView'
 import { JournalCard } from './components/JournalCard'
 import { AddPinFlow } from './components/AddPinFlow'
 import { StatsPanel } from './components/StatsPanel'
+import { TripListPanel } from './components/TripListPanel'
 import { LoadingScreen } from './components/LoadingScreen'
 import type { Pin } from './types/pin'
 
@@ -28,6 +29,8 @@ export default function App() {
     toggleYear,
     isStatsPanelOpen,
     toggleStatsPanel,
+    isListPanelOpen,
+    toggleListPanel,
   } = useMapState()
 
   const years = useMemo(() => getUniqueYears(pins.map((p) => p.year)), [pins])
@@ -43,8 +46,10 @@ export default function App() {
         <Header
           isAddMode={isAddMode}
           isStatsPanelOpen={isStatsPanelOpen}
+          isListPanelOpen={isListPanelOpen}
           onToggleAddMode={toggleAddMode}
           onToggleStats={toggleStatsPanel}
+          onToggleList={toggleListPanel}
         />
 
         <div className="relative flex-1 overflow-hidden">
@@ -78,6 +83,14 @@ export default function App() {
             pins={pins}
             isOpen={isStatsPanelOpen}
             onClose={toggleStatsPanel}
+          />
+
+          {/* Trip list panel — centered modal / bottom sheet */}
+          <TripListPanel
+            pins={pins}
+            isOpen={isListPanelOpen}
+            onClose={toggleListPanel}
+            onSelectPin={selectPin}
           />
 
           {/* Add pin flow — modal */}

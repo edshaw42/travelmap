@@ -48,6 +48,7 @@ export function MapView({
         style={{ width: '100%', height: '100%' }}
       >
         <MapStyler isDark={isDark} />
+        <MapController selectedPin={selectedPin} />
         <MapClickHandler isAddMode={isAddMode} onMapClick={onMapClick} />
         <ClusteredPins
           pins={visiblePins}
@@ -62,17 +63,28 @@ export function MapView({
   )
 }
 
-/* Applies map style whenever theme changes */
+/** Switches map style whenever theme changes */
 function MapStyler({ isDark }: { isDark: boolean }) {
   const map = useMap()
   useEffect(() => {
-    if (!map) return
-    map.setOptions({ styles: isDark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE })
+    if (map) map.setOptions({ styles: isDark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE })
   }, [map, isDark])
   return null
 }
 
-/* Map click → add-pin mode */
+/** Smoothly pans to a pin whenever selection changes (e.g. from list view) */
+function MapController({ selectedPin }: { selectedPin: Pin | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!map || !selectedPin) return
+    map.panTo({ lat: selectedPin.lat, lng: selectedPin.lng })
+    const zoom = map.getZoom() ?? 0
+    if (zoom < 8) map.setZoom(10)
+  }, [map, selectedPin])
+  return null
+}
+
+/** Map click → add-pin mode */
 function MapClickHandler({
   isAddMode,
   onMapClick,
@@ -81,7 +93,6 @@ function MapClickHandler({
   onMapClick: (lat: number, lng: number) => void
 }) {
   const map = useMap()
-
   useEffect(() => {
     if (!map) return
     const listener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
@@ -90,11 +101,10 @@ function MapClickHandler({
     })
     return () => google.maps.event.removeListener(listener)
   }, [map, isAddMode, onMapClick])
-
   return null
 }
 
-/* Clustered pin markers — recreated when pins or selection changes */
+/** Clustered pin markers — full rebuild when pins or selection changes */
 interface ClusteredPinsProps {
   pins: Pin[]
   selectedPin: Pin | null
@@ -104,7 +114,6 @@ interface ClusteredPinsProps {
 
 function ClusteredPins({ pins, selectedPin, onSelect, isDark }: ClusteredPinsProps) {
   const map = useMap()
-  // Keep callback stable across renders so markers don't need recreating for it
   const onSelectRef = useRef(onSelect)
   useEffect(() => { onSelectRef.current = onSelect })
 
@@ -152,22 +161,21 @@ function ClusteredPins({ pins, selectedPin, onSelect, isDark }: ClusteredPinsPro
   return null
 }
 
-/* Custom cluster bubble — gold circle with count */
 function makeClusterRenderer(isDark: boolean): Renderer {
   return {
     render({ count, position }) {
       const size = count > 99 ? 56 : count > 9 ? 48 : 40
       const r = size / 2 - 2
       const fontSize = count > 99 ? 12 : 14
-      const accentColor = isDark ? '#f0c040' : '#b07010'
-      const textColor = isDark ? '#0f0f1a' : '#ffffff'
+      const fill = isDark ? '#f0c040' : '#b07010'
+      const text = isDark ? '#0f0f1a' : '#ffffff'
 
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="${accentColor}" opacity="0.93"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="${fill}" opacity="0.93"/>
         <circle cx="${size / 2}" cy="${size / 2}" r="${r - 6}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
         <text x="${size / 2}" y="${size / 2 + 5}" text-anchor="middle"
           font-family="Inter,ui-sans-serif,sans-serif" font-size="${fontSize}" font-weight="700"
-          fill="${textColor}">${count}</text>
+          fill="${text}">${count}</text>
       </svg>`
 
       return new google.maps.Marker({

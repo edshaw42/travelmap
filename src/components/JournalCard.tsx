@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MapPin, Camera } from 'lucide-react'
-import { getYearColor } from '../lib/colors'
+import { getYearColor, getYearColorForUI } from '../lib/colors'
+import { useTheme } from '../contexts/ThemeContext'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import type { Pin } from '../types/pin'
 
@@ -22,7 +23,6 @@ export function JournalCard({ pin, onClose }: JournalCardProps) {
     <AnimatePresence>
       {pin && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="jc-backdrop"
             initial={{ opacity: 0 }}
@@ -33,7 +33,6 @@ export function JournalCard({ pin, onClose }: JournalCardProps) {
           />
 
           {isDesktop ? (
-            /* Desktop — right panel */
             <motion.aside
               key="jc-panel"
               initial={{ x: '100%' }}
@@ -46,7 +45,6 @@ export function JournalCard({ pin, onClose }: JournalCardProps) {
               <CardContent pin={pin} onClose={onClose} />
             </motion.aside>
           ) : (
-            /* Mobile — bottom sheet with swipe-to-dismiss */
             <motion.aside
               key="jc-sheet"
               initial={{ y: '100%' }}
@@ -66,7 +64,6 @@ export function JournalCard({ pin, onClose }: JournalCardProps) {
                 borderTop: '1px solid var(--c-border)',
               }}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                 <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'var(--c-border)' }} />
               </div>
@@ -80,7 +77,9 @@ export function JournalCard({ pin, onClose }: JournalCardProps) {
 }
 
 function CardContent({ pin, onClose }: { pin: Pin; onClose: () => void }) {
-  const color = getYearColor(pin.year)
+  const { isDark } = useTheme()
+  const mapColor = getYearColor(pin.year)           // vivid — for hero gradient & decorative elements
+  const uiColor = getYearColorForUI(pin.year, isDark) // contrast-safe — for text, borders
   const monthAbbr = MONTH_ABBR[pin.month] ?? pin.month?.slice(0, 3).toUpperCase() ?? '—'
   const locationLine = [pin.city, pin.state, pin.country].filter(Boolean).join(' · ')
   const latStr = pin.lat >= 0 ? `${pin.lat.toFixed(4)}°N` : `${Math.abs(pin.lat).toFixed(4)}°S`
@@ -95,7 +94,7 @@ function CardContent({ pin, onClose }: { pin: Pin; onClose: () => void }) {
         ) : (
           <div
             className="w-full h-full"
-            style={{ background: `linear-gradient(135deg, ${color}55 0%, ${color}18 50%, var(--c-surface) 100%)` }}
+            style={{ background: `linear-gradient(135deg, ${mapColor}50 0%, ${mapColor}18 55%, var(--c-surface) 100%)` }}
           >
             <svg className="absolute inset-0 w-full h-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -106,31 +105,31 @@ function CardContent({ pin, onClose }: { pin: Pin; onClose: () => void }) {
               <rect width="100%" height="100%" fill="url(#jc-grid)" />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Camera className="w-10 h-10 opacity-10" style={{ color }} />
+              <Camera className="w-10 h-10 opacity-10" style={{ color: mapColor }} />
             </div>
           </div>
         )}
 
-        {/* Date stamp */}
+        {/* Date stamp — uses uiColor for legibility */}
         <div className="absolute top-4 left-4">
           <div
             className="flex flex-col items-center justify-center w-14 h-14 rounded-sm"
             style={{
-              border: `2px solid ${color}80`,
-              backgroundColor: `${color}14`,
+              border: `2px solid ${uiColor}80`,
+              backgroundColor: `${mapColor}18`,
               transform: 'rotate(-3deg)',
             }}
           >
-            <span className="text-[10px] font-bold tracking-[0.12em]" style={{ color }}>{monthAbbr}</span>
-            <div className="w-full border-t my-0.5" style={{ borderColor: `${color}50` }} />
-            <span className="text-[11px] font-semibold" style={{ color }}>{pin.year}</span>
+            <span className="text-[10px] font-bold tracking-[0.12em]" style={{ color: uiColor }}>{monthAbbr}</span>
+            <div className="w-full border-t my-0.5" style={{ borderColor: `${uiColor}50` }} />
+            <span className="text-[11px] font-semibold" style={{ color: uiColor }}>{pin.year}</span>
           </div>
         </div>
 
         {/* Year chip */}
         <div className="absolute top-4 right-12 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-xs font-medium" style={{ color }}>{pin.year}</span>
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: mapColor }} />
+          <span className="text-xs font-medium" style={{ color: uiColor }}>{pin.year}</span>
         </div>
 
         {/* Close */}
@@ -144,20 +143,20 @@ function CardContent({ pin, onClose }: { pin: Pin; onClose: () => void }) {
           <X className="w-4 h-4" />
         </button>
 
-        {/* Fade to body */}
         <div
           className="absolute bottom-0 left-0 right-0 h-16"
           style={{ background: 'linear-gradient(to top, var(--c-surface), transparent)' }}
         />
       </div>
 
-      {/* Scrollable body */}
+      {/* Body */}
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
         <div>
           <h2 className="text-2xl font-semibold leading-tight" style={{ color: 'var(--c-text-1)' }}>
             {pin.name}
           </h2>
-          <div className="mt-2 h-[2px] w-12 rounded-full" style={{ backgroundColor: color }} />
+          {/* Accent rule uses the vivid map color — decorative, not text */}
+          <div className="mt-2 h-[2px] w-12 rounded-full" style={{ backgroundColor: mapColor }} />
         </div>
 
         {locationLine && (
@@ -170,12 +169,12 @@ function CardContent({ pin, onClose }: { pin: Pin; onClose: () => void }) {
         {pin.description ? (
           <div className="relative">
             <span
-              className="absolute -top-3 -left-1 text-5xl leading-none font-serif opacity-20"
-              style={{ color }}
+              className="absolute -top-3 -left-1 text-5xl leading-none font-serif"
+              style={{ color: mapColor, opacity: isDark ? 0.2 : 0.15 }}
             >"</span>
             <p
               className="text-sm leading-7 italic pl-3 border-l-2"
-              style={{ color: 'var(--c-text-2)', borderColor: `${color}40` }}
+              style={{ color: 'var(--c-text-2)', borderColor: `${mapColor}50` }}
             >
               {pin.description}
             </p>
