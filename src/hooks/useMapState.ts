@@ -1,10 +1,19 @@
 import { useCallback, useState } from 'react'
+import type { GeoResult } from '../lib/geocode'
 import type { Pin } from '../types/pin'
+
+export interface PendingLocation {
+  lat: number
+  lng: number
+  /** Set when the location came from place search — skips reverse geocoding */
+  label?: string
+  geo?: GeoResult
+}
 
 export function useMapState() {
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
   const [isAddMode, setIsAddMode] = useState(false)
-  const [pendingLocation, setPendingLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [pendingLocation, setPendingLocation] = useState<PendingLocation | null>(null)
   const [activeYears, setActiveYears] = useState<Set<string>>(new Set())
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false)
   const [isListPanelOpen, setIsListPanelOpen] = useState(false)
@@ -20,8 +29,8 @@ export function useMapState() {
     setPendingLocation(null)
   }, [])
 
-  const startAddPin = useCallback((lat: number, lng: number) => {
-    setPendingLocation({ lat, lng })
+  const startAddPin = useCallback((location: PendingLocation) => {
+    setPendingLocation(location)
   }, [])
 
   const cancelAddPin = useCallback(() => {

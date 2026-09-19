@@ -1,11 +1,14 @@
 import { useEffect, useRef } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { Map, useMap } from '@vis.gl/react-google-maps'
 import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import type { Renderer } from '@googlemaps/markerclusterer'
 import { DARK_MAP_STYLE, DEFAULT_CENTER, DEFAULT_ZOOM, LIGHT_MAP_STYLE } from '../constants'
 import { getYearColor } from '../lib/colors'
+import type { PlaceResult } from '../lib/geocode'
 import type { Pin } from '../types/pin'
 import { YearFilter } from './YearFilter'
+import { PlaceSearch } from './PlaceSearch'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface MapViewProps {
@@ -16,6 +19,7 @@ interface MapViewProps {
   years: string[]
   onSelectPin: (pin: Pin | null) => void
   onMapClick: (lat: number, lng: number) => void
+  onPlaceFound: (place: PlaceResult) => void
   onToggleYear: (year: string) => void
 }
 
@@ -27,6 +31,7 @@ export function MapView({
   years,
   onSelectPin,
   onMapClick,
+  onPlaceFound,
   onToggleYear,
 }: MapViewProps) {
   const { isDark } = useTheme()
@@ -59,6 +64,10 @@ export function MapView({
       </Map>
 
       <YearFilter years={years} activeYears={activeYears} onToggleYear={onToggleYear} />
+
+      <AnimatePresence>
+        {isAddMode && <PlaceSearch key="place-search" onPlaceFound={onPlaceFound} />}
+      </AnimatePresence>
     </div>
   )
 }
