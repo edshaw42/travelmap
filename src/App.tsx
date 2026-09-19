@@ -69,7 +69,11 @@ export default function App() {
               onMapClick={(lat, lng) => {
                 if (!isAddMode) return
                 selectPin(null)
-                startAddPin(lat, lng)
+                startAddPin({ lat, lng })
+              }}
+              onPlaceFound={(place) => {
+                selectPin(null)
+                startAddPin(place)
               }}
               onToggleYear={toggleYear}
             />

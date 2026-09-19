@@ -23,8 +23,12 @@ export const COL = {
   PHOTO_URL: 10,
 } as const
 
+// Label strategy: don't hide icons globally — at low zoom Google drops a city's name
+// along with its dot, so hiding all icons leaves no cities on the zoomed-out map.
+// Only road shields are hidden; POI and transit are off entirely. Google then reveals
+// state names + major cities zoomed out, and progressively smaller towns as you zoom in.
 export const LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
-  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5fa' }] },
@@ -34,13 +38,19 @@ export const LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#b8d4f0' }] },
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
   { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#d1d5db' }] },
-  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#374151' }] },
+  { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#6b7280' }, { weight: 1.2 }] },
+  { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#9ca3b8' }, { weight: 1 }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#4b5563' }] },
+  { featureType: 'administrative.province', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#1f2937' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.icon', stylers: [{ color: '#4b5563' }] },
 ]
 
 export const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1e1e2e' }] },
-  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#1e1e2e' }] },
   {
@@ -50,13 +60,33 @@ export const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   },
   {
     featureType: 'administrative.country',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#6b7280' }, { weight: 1.2 }],
+  },
+  {
+    featureType: 'administrative.province',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#4b5568' }, { weight: 1 }],
+  },
+  {
+    featureType: 'administrative.country',
     elementType: 'labels.text.fill',
-    stylers: [{ color: '#9ca3af' }],
+    stylers: [{ color: '#b4bac6' }],
+  },
+  {
+    featureType: 'administrative.province',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#8b93a5' }],
   },
   {
     featureType: 'administrative.locality',
     elementType: 'labels.text.fill',
-    stylers: [{ color: '#d1d5db' }],
+    stylers: [{ color: '#e5e7eb' }],
+  },
+  {
+    featureType: 'administrative.locality',
+    elementType: 'labels.icon',
+    stylers: [{ color: '#9ca3af' }],
   },
   {
     featureType: 'poi',

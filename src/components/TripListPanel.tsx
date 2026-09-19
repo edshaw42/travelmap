@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, MapPin } from 'lucide-react'
+import { X, Search, MapPin, ChevronRight } from 'lucide-react'
 import { getYearColor, getYearColorForUI } from '../lib/colors'
 import { useTheme } from '../contexts/ThemeContext'
 import { useMediaQuery } from '../hooks/useMediaQuery'
@@ -18,6 +18,43 @@ const MONTH_ABBR: Record<string, string> = {
 }
 
 type SortOrder = 'newest' | 'oldest' | 'name'
+
+/** A list row: either a lone pin, or several pins sharing a name in the same year (a trip) */
+type ListItem =
+  | { kind: 'pin'; pin: Pin }
+  | { kind: 'trip'; key: string; name: string; year: string; pins: Pin[] }
+
+function groupTrips(pins: Pin[]): ListItem[] {
+  const byKey = new Map<string, Pin[]>()
+  for (const pin of pins) {
+    const key = `${pin.year}|${pin.name.trim().toLowerCase()}`
+    const group = byKey.get(key)
+    if (group) group.push(pin)
+    else byKey.set(key, [pin])
+  }
+
+  // Keep the incoming sort order, placing each trip where its first pin appeared
+  const items: ListItem[] = []
+  const emitted = new Set<string>()
+  for (const pin of pins) {
+    const key = `${pin.year}|${pin.name.trim().toLowerCase()}`
+    const group = byKey.get(key)!
+    if (group.length === 1) {
+      items.push({ kind: 'pin', pin })
+    } else if (!emitted.has(key)) {
+      emitted.add(key)
+      items.push({
+        kind: 'trip',
+        key,
+        name: pin.name.trim(),
+        year: pin.year,
+        // Stops in the order they were entered
+        pins: [...group].sort((a, b) => Number(a.id) - Number(b.id)),
+      })
+    }
+  }
+  return items
+}
 
 interface TripListPanelProps {
   pins: Pin[]
@@ -78,8 +115,21 @@ export function TripListPanel({ pins, isOpen, onClose, onSelectPin }: TripListPa
     }
     return Object.keys(groups)
       .sort((a, b) => (sortOrder === 'newest' ? Number(b) - Number(a) : Number(a) - Number(b)))
-      .map((year) => ({ year, pins: groups[year] }))
+      .map((year) => ({ year, items: groupTrips(groups[year]) }))
   }, [filtered, sortOrder])
+
+  const flatItems = useMemo(() => groupTrips(filtered), [filtered])
+
+  const [expandedTrips, setExpandedTrips] = useState<Set<string>>(new Set())
+  function toggleTrip(key: string) {
+    setExpandedTrips((prev) => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+  // While searching, show matching stops rather than hiding them in collapsed trips
+  const isTripExpanded = (key: string) => search.trim() !== '' || expandedTrips.has(key)
 
   function toggleYear(year: string) {
     setYearFilter((prev) => {
@@ -110,6 +160,9 @@ export function TripListPanel({ pins, isOpen, onClose, onSelectPin }: TripListPa
       onToggleYear={toggleYear}
       filtered={filtered}
       grouped={grouped}
+      flatItems={flatItems}
+      isTripExpanded={isTripExpanded}
+      onToggleTrip={toggleTrip}
       countLabel={countLabel}
       isDark={isDark}
       onClose={onClose}
@@ -197,7 +250,10 @@ interface InnerProps {
   yearFilter: Set<string>
   onToggleYear: (y: string) => void
   filtered: Pin[]
-  grouped: { year: string; pins: Pin[] }[] | null
+  grouped: { year: string; items: ListItem[] }[] | null
+  flatItems: ListItem[]
+  isTripExpanded: (key: string) => boolean
+  onToggleTrip: (key: string) => void
   countLabel: string
   isDark: boolean
   onClose: () => void
@@ -207,9 +263,23 @@ interface InnerProps {
 function PanelInner({
   search, onSearch, sortOrder, onSort,
   allYears, yearFilter, onToggleYear,
-  filtered, grouped, countLabel,
+  filtered, grouped, flatItems, isTripExpanded, onToggleTrip, countLabel,
   isDark, onClose, onSelect,
 }: InnerProps) {
+  const renderItem = (item: ListItem) =>
+    item.kind === 'pin' ? (
+      <TripCard key={item.pin.id} pin={item.pin} isDark={isDark} onSelect={onSelect} />
+    ) : (
+      <TripGroup
+        key={item.key}
+        trip={item}
+        isDark={isDark}
+        expanded={isTripExpanded(item.key)}
+        onToggle={() => onToggleTrip(item.key)}
+        onSelect={onSelect}
+      />
+    )
+
   return (
     <>
       {/* Header */}
@@ -307,7 +377,7 @@ function PanelInner({
             <p className="text-sm" style={{ color: 'var(--c-text-3)' }}>No trips match your search.</p>
           </div>
         ) : grouped ? (
-          grouped.map(({ year, pins: yPins }) => (
+          grouped.map(({ year, items }) => (
             <div key={year}>
               {/* Year section header */}
               <div
@@ -319,31 +389,117 @@ function PanelInner({
                   {year}
                 </span>
                 <span className="text-xs" style={{ color: 'var(--c-text-3)' }}>
-                  · {yPins.length} trip{yPins.length !== 1 ? 's' : ''}
+                  · {items.length} trip{items.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              {yPins.map((pin) => (
-                <TripCard key={pin.id} pin={pin} isDark={isDark} onSelect={onSelect} />
-              ))}
+              {items.map(renderItem)}
             </div>
           ))
         ) : (
-          filtered.map((pin) => (
-            <TripCard key={pin.id} pin={pin} isDark={isDark} onSelect={onSelect} />
-          ))
+          flatItems.map(renderItem)
         )}
       </div>
     </>
   )
 }
 
+/* ─── Trip group (several stops under one name) ────────────────────────────── */
+
+function TripGroup({
+  trip,
+  isDark,
+  expanded,
+  onToggle,
+  onSelect,
+}: {
+  trip: Extract<ListItem, { kind: 'trip' }>
+  isDark: boolean
+  expanded: boolean
+  onToggle: () => void
+  onSelect: (p: Pin) => void
+}) {
+  const mapColor = getYearColor(trip.year)
+  const uiColor = getYearColorForUI(trip.year, isDark)
+
+  const months = [...new Set(trip.pins.map((p) => p.month))].sort(
+    (a, b) => (MONTH_ORDER[a] ?? 0) - (MONTH_ORDER[b] ?? 0),
+  )
+  const abbr = (m: string) => MONTH_ABBR[m] ?? m.slice(0, 3).toUpperCase()
+  const dateLabel =
+    months.length > 1 ? `${abbr(months[0])}–${abbr(months[months.length - 1])}` : abbr(months[0] ?? '')
+  const states = [...new Set(trip.pins.map((p) => p.state).filter(Boolean))]
+
+  return (
+    <div style={{ borderBottom: '1px solid var(--c-border-sub)' }}>
+      <motion.button
+        onClick={onToggle}
+        whileHover={{ backgroundColor: 'var(--c-raised)' }}
+        aria-expanded={expanded}
+        className="w-full flex items-stretch gap-3.5 px-5 py-3.5 text-left cursor-pointer transition-colors"
+      >
+        {/* Thicker stripe marks a multi-stop trip */}
+        <div className="w-1 rounded-full flex-shrink-0" style={{ backgroundColor: mapColor }} />
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <span className="flex items-center gap-1 font-medium text-sm leading-snug" style={{ color: 'var(--c-text-1)' }}>
+              <ChevronRight
+                className="w-3.5 h-3.5 flex-shrink-0 transition-transform"
+                style={{ color: 'var(--c-text-3)', transform: expanded ? 'rotate(90deg)' : undefined }}
+              />
+              {trip.name}
+            </span>
+            <span className="text-[10px] font-bold tracking-wider flex-shrink-0 mt-px" style={{ color: uiColor }}>
+              {dateLabel} {trip.year}
+            </span>
+          </div>
+          <p className="text-xs mt-0.5 truncate pl-[18px]" style={{ color: 'var(--c-text-3)' }}>
+            {trip.pins.length} stops{states.length > 0 && ` · ${states.join(', ')}`}
+          </p>
+        </div>
+      </motion.button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden pl-5"
+            style={{ borderTop: '1px solid var(--c-border-sub)' }}
+          >
+            {trip.pins.map((pin) => (
+              <TripCard key={pin.id} pin={pin} isDark={isDark} onSelect={onSelect} asStop />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 /* ─── Trip card ────────────────────────────────────────────────────────────── */
 
-function TripCard({ pin, isDark, onSelect }: { pin: Pin; isDark: boolean; onSelect: (p: Pin) => void }) {
+function TripCard({
+  pin,
+  isDark,
+  onSelect,
+  asStop = false,
+}: {
+  pin: Pin
+  isDark: boolean
+  onSelect: (p: Pin) => void
+  /** Rendered inside a trip group — lead with the place, since the trip name is in the header */
+  asStop?: boolean
+}) {
   const mapColor = getYearColor(pin.year)
   const uiColor = getYearColorForUI(pin.year, isDark)
   const monthAbbr = MONTH_ABBR[pin.month] ?? pin.month?.slice(0, 3).toUpperCase() ?? '—'
-  const location = [pin.city, pin.state, pin.country].filter(Boolean).join(', ')
+  const location = asStop
+    ? [pin.state, pin.country].filter(Boolean).join(', ')
+    : [pin.city, pin.state, pin.country].filter(Boolean).join(', ')
+  const title = asStop ? pin.city || pin.name : pin.name
 
   return (
     <motion.button
@@ -359,7 +515,7 @@ function TripCard({ pin, isDark, onSelect }: { pin: Pin; isDark: boolean; onSele
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-3">
           <span className="font-medium text-sm leading-snug" style={{ color: 'var(--c-text-1)' }}>
-            {pin.name}
+            {title}
           </span>
           <span className="text-[10px] font-bold tracking-wider flex-shrink-0 mt-px" style={{ color: uiColor }}>
             {monthAbbr} {pin.year}

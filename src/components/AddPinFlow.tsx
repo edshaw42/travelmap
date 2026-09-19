@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, X } from 'lucide-react'
 import { geocodeLatLng } from '../lib/geocode'
-import { useAddPin } from '../hooks/usePins'
-import type { NewPin } from '../types/pin'
+import { useAddPin, usePins } from '../hooks/usePins'
+import type { PendingLocation } from '../hooks/useMapState'
+import type { NewPin, Pin } from '../types/pin'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -14,7 +15,7 @@ const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: CURRENT_YEAR - 2017 }, (_, i) => CURRENT_YEAR - i)
 
 interface AddPinFlowProps {
-  location: { lat: number; lng: number } | null
+  location: PendingLocation | null
   onCancel: () => void
   onSuccess: (pin: NewPin & { id: string }) => void
 }
@@ -27,6 +28,8 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
   const [geo, setGeo] = useState<{ city: string; state: string; country: string } | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
   const { mutateAsync: addPin, isPending } = useAddPin()
+  const { data: pins = [] } = usePins()
+  const tripSuggestions = useMemo(() => suggestTrips(pins, form.name), [pins, form.name])
 
   if (!location) return null
 
@@ -35,16 +38,17 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
 
   async function confirmLocation() {
     setIsGeocoding(true)
-    const result = await geocodeLatLng(location!.lat, location!.lng)
+    const result = location!.geo ?? (await geocodeLatLng(location!.lat, location!.lng))
     setGeo(result)
     setIsGeocoding(false)
     setStep('details')
   }
 
   async function handleSubmit() {
-    if (!form.name || !form.month) return
+    const name = form.name.trim()
+    if (!name || !form.month) return
     const pin: NewPin = {
-      name: form.name, month: form.month, year: form.year, description: form.description,
+      name, month: form.month, year: form.year, description: form.description,
       lat: location!.lat, lng: location!.lng,
       city: geo?.city ?? '', state: geo?.state ?? '', country: geo?.country ?? '',
     }
@@ -119,14 +123,17 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
                     <MapPin className="w-6 h-6" style={{ color: 'var(--c-accent)' }} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--c-text-1)' }}>You were here</p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--c-text-1)' }}>
+                      {location.label ?? 'You were here'}
+                    </p>
                     <p className="text-xs font-mono mt-1" style={{ color: 'var(--c-text-3)' }}>
                       {latStr} · {lngStr}
                     </p>
                   </div>
                   <p className="text-xs max-w-xs" style={{ color: 'var(--c-text-3)' }}>
-                    We'll look up the city, state, and country automatically.
-                    Is this the right spot?
+                    {location.geo
+                      ? 'Is this the right spot?'
+                      : "We'll look up the city, state, and country automatically. Is this the right spot?"}
                   </p>
                 </div>
               </StepPane>
@@ -159,6 +166,34 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
                         color: 'var(--c-text-1)',
                       }}
                     />
+                    {tripSuggestions.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[11px]" style={{ color: 'var(--c-text-3)' }}>Add to trip:</span>
+                        {tripSuggestions.map((trip) => (
+                          <button
+                            key={trip.name}
+                            type="button"
+                            onClick={() =>
+                              setForm((f) => ({
+                                ...f,
+                                name: trip.name,
+                                // Same trip is usually the same month — prefill unless already chosen
+                                month: f.month || trip.month,
+                                year: trip.year || f.year,
+                              }))
+                            }
+                            className="px-2.5 py-1 rounded-full text-xs cursor-pointer transition-colors"
+                            style={{
+                              backgroundColor: 'var(--c-accent-bg)',
+                              border: '1px solid var(--c-accent-bdr)',
+                              color: 'var(--c-accent)',
+                            }}
+                          >
+                            {trip.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Month">
@@ -261,6 +296,43 @@ export function AddPinFlow({ location, onCancel, onSuccess }: AddPinFlowProps) {
       </motion.div>
     </>
   )
+}
+
+interface TripSuggestion {
+  name: string
+  month: string
+  year: string
+}
+
+/**
+ * Existing pin names to offer as chips, so repeat trips ("Northeast Trip") are reused
+ * verbatim instead of retyped with typos. Names used on the most pins come first,
+ * then the most recently added.
+ */
+function suggestTrips(pins: Pin[], typed: string): TripSuggestion[] {
+  const query = typed.trim().toLowerCase()
+  const trips = new Map<string, TripSuggestion & { count: number; lastId: number }>()
+
+  for (const pin of pins) {
+    const name = pin.name.trim()
+    const key = name.toLowerCase()
+    if (!name) continue
+    const id = Number(pin.id) // row number — higher means added later
+    const trip = trips.get(key)
+    if (!trip) {
+      trips.set(key, { name, month: pin.month, year: pin.year, count: 1, lastId: id })
+    } else {
+      trip.count++
+      if (id > trip.lastId) Object.assign(trip, { month: pin.month, year: pin.year, lastId: id })
+    }
+  }
+
+  return [...trips.entries()]
+    .filter(([key]) => key !== query && (!query || key.includes(query)))
+    .map(([, trip]) => trip)
+    .sort((a, b) => b.count - a.count || b.lastId - a.lastId)
+    .slice(0, 5)
+    .map(({ name, month, year }) => ({ name, month, year }))
 }
 
 function StepPane({ children }: { children: React.ReactNode }) {

@@ -59,7 +59,7 @@ export function Header({
           >
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--c-accent)' }} />
             <span className="text-xs font-medium" style={{ color: 'var(--c-accent)' }}>
-              Click map to add
+              Search or click map to add
             </span>
           </motion.div>
         )}
